@@ -1,6 +1,6 @@
 import pygame as pg
+import config  # Importa el módulo config aquí
 from colors import *
-import config
 
 class Drawable:
     def draw(self, surface):
@@ -18,8 +18,9 @@ class Resettable:
     def reset_position(self):
         raise NotImplementedError
 
-class Rectangulo(Drawable, Movable, GravityAffected, Resettable):
+class Rectangulo(pg.sprite.Sprite, Drawable, Movable, GravityAffected, Resettable):
     def __init__(self, x, y, width, height, color, border):
+        super().__init__()
         self.initial_x = x
         self.initial_y = y
         self.rect = pg.Rect(x, y, width, height)
