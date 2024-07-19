@@ -41,7 +41,7 @@ class Rectangulo(Drawable, Movable, GravityAffected, Resettable):
         self.border = border
         self.vel_y = 0
         self.on_platform = False
-        self.jumps_left = 2  # Número de saltos disponibles
+        self.jumps_left = 2
 
     def draw(self, surface):
         pg.draw.rect(surface, self.color, self.rect, self.border)
@@ -66,7 +66,7 @@ class Rectangulo(Drawable, Movable, GravityAffected, Resettable):
         self.rect.y = self.initial_y
         self.vel_y = 0
         self.on_platform = False
-        self.jumps_left = 2  # Restablece los saltos disponibles
+        self.jumps_left = 2
 
 # Clase Cuadricula
 class Cuadricula(Drawable):
@@ -97,7 +97,7 @@ class CollisionChecker:
                     rect.rect.bottom = platform.rect.top
                     rect.vel_y = 0
                     rect.on_platform = True
-                    rect.jumps_left = 2  # Restablece los saltos disponibles cuando toca una plataforma
+                    rect.jumps_left = 2
                     return platform
         return None
 
@@ -131,7 +131,7 @@ def main():
                     pg.quit()
                     sys.exit()
                 elif event.key == pg.K_SPACE:
-                    cuadrado.jump()  # Solicita el salto
+                    cuadrado.jump()
 
         keys = pg.key.get_pressed()
         dx, dy = 0, 0
@@ -139,8 +139,6 @@ def main():
             dx = -SPEED
         if keys[pg.K_RIGHT] and cuadrado.rect.right < WIDTH:
             dx = SPEED
-
-        # Movimiento vertical si está en una plataforma y se presiona la tecla hacia abajo
         if keys[pg.K_DOWN] and cuadrado.on_platform:
             cuadrado.on_platform = False
             cuadrado.rect.y += 1
@@ -149,7 +147,6 @@ def main():
         cuadrado.apply_gravity()
         CollisionChecker.check_collision(cuadrado, platforms)
 
-        # Reajustar posición si se cae fuera de la pantalla
         if cuadrado.rect.bottom > HEIGHT:
             cuadrado.reset_position()
 
