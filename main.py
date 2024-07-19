@@ -2,8 +2,11 @@ import pygame as pg
 from colors import *
 import sys
 
-WIDTH = 600
-HEIGHT = 600
+pg.init()
+
+info = pg.display.Info()
+WIDTH = info.current_w
+HEIGHT = info.current_h
 SPEED = 10
 
 class Rectangulo:
@@ -17,11 +20,26 @@ class Rectangulo:
         self.rect.x += dx
         self.rect.y += dy
 
-pg.init()
-window = pg.display.set_mode((WIDTH, HEIGHT))
+class Circulo:
+    def __init__(self, x, y, radius, color, border):
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.color = color
+        self.border = border
+    def draw(self, surface):
+        pg.draw.circle(surface, self.color, (self.x, self.y), self.radius, self.border)
+    def move(self, dx, dy):
+        self.x += dx
+        self.y += dy
+
+window = pg.display.set_mode((WIDTH, HEIGHT), pg.FULLSCREEN)
 pg.display.set_caption('ProjectXY')
 window.fill(Azul_Púrpura)
+
 cuadrado = Rectangulo(300, 300, 40, 20, Rojo_Naranja, 3)
+circulo = Circulo(150, 150, 20, Verde_Bosque, 3)
+
 clock = pg.time.Clock()
 
 while True:
@@ -29,8 +47,13 @@ while True:
         if event.type == pg.QUIT:
             pg.quit()
             sys.exit()
+        elif event.type == pg.KEYDOWN:
+            if event.key == pg.K_ESCAPE:
+                pg.quit()
+                sys.exit()
         
     keys = pg.key.get_pressed()
+
     dx, dy = 0, 0
     if keys[pg.K_a] and cuadrado.rect.left > 0:
         dx = -SPEED
@@ -40,9 +63,22 @@ while True:
         dy = -SPEED
     if keys[pg.K_s] and cuadrado.rect.bottom < HEIGHT:
         dy = SPEED
-    
     cuadrado.move(dx, dy)
+
+    dx, dy = 0, 0
+    if keys[pg.K_LEFT] and circulo.x - circulo.radius > 0:
+        dx = -SPEED
+    if keys[pg.K_RIGHT] and circulo.x + circulo.radius < WIDTH:
+        dx = SPEED
+    if keys[pg.K_UP] and circulo.y - circulo.radius > 0:
+        dy = -SPEED
+    if keys[pg.K_DOWN] and circulo.y + circulo.radius < HEIGHT:
+        dy = SPEED
+    circulo.move(dx, dy)
+
     window.fill(Azul_Púrpura)
     cuadrado.draw(window)
+    circulo.draw(window)
+
     pg.display.flip()
     clock.tick(60)
