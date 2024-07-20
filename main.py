@@ -71,7 +71,6 @@ class Jugador(pg.sprite.Sprite):
         if not self.on_platform:
             self.vel_y += GRAVITY
 
-        # Limit the maximum height of the jump
         if self.is_jumping and self.rect.y <= self.jump_start_y - 25:
             self.vel_y = 0
             self.is_jumping = False
@@ -109,15 +108,18 @@ class CollisionChecker:
         rect.on_platform = False
         for obj in objects:
             if rect.rect.colliderect(obj.rect):
+                # Handling collision from above
                 if rect.vel_y > 0 and rect.rect.bottom <= obj.rect.top + abs(rect.vel_y):
                     rect.rect.bottom = obj.rect.top
                     rect.vel_y = 0
                     rect.on_platform = True
                     rect.jumps_left = 1
+                # Handling collision from below
                 elif rect.vel_y < 0 and rect.rect.top >= obj.rect.bottom:
                     rect.rect.top = obj.rect.bottom
                     rect.vel_y = 0
 
+                # Handling horizontal collisions
                 if rect.vel_x > 0 and rect.rect.right > obj.rect.left and rect.rect.left < obj.rect.left:
                     rect.rect.right = obj.rect.left
                     rect.vel_x = 0
@@ -151,7 +153,7 @@ def main():
     ]
 
     tierra_bajo_plataforma = Tierra(700, 675, 25)
-    jugador = Jugador(WIDTH // 2, HEIGHT // 2, 40, 40, Rojo_Naranja)
+    jugador = Jugador(WIDTH // 2, HEIGHT // 2, 20, 40, Rojo_Naranja)
     cuadricula = Cuadricula(GRID_SIZE, Granate, Vino, WIDTH, HEIGHT)
     clock = pg.time.Clock()
 
