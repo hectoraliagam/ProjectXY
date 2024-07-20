@@ -1,4 +1,4 @@
-# Define los colores
+# Define los colores en formato RGB.
 Rojo = (255, 0, 0)
 Rojo_Naranja = (255, 83, 0)
 Naranja = (255, 165, 0)
@@ -15,7 +15,7 @@ Magenta = (255, 0, 255)
 Fucsia = (255, 0, 127)
 Granate = (128, 0, 0)
 Caoba_o_Rojo_Indio = (165, 42, 42)
-Marrón_o_Pardo = (139, 69, 19)  # Asegúrate de que este color esté definido
+Marrón_o_Pardo = (139, 69, 19)
 Marrón_Dorado = (184, 134, 11)
 Oliva = (128, 128, 0)
 Verde_Palta = (153, 187, 85)
