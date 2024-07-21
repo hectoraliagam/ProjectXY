@@ -3,7 +3,7 @@ import sys
 
 # Configuración de constantes
 SCREEN_RATIO = 16 / 9
-SPEED = 5
+SPEED = 3
 GRAVITY = 0.5
 JUMP_STRENGTH = 15
 GRID_SIZE = 50
@@ -106,7 +106,7 @@ class Jugador(pg.sprite.Sprite):
         if not self.on_platform:
             self.vel_y += GRAVITY
 
-        if self.is_jumping and self.rect.y <= self.jump_start_y - 25:
+        if self.is_jumping and self.rect.y <= self.jump_start_y - 50:
             self.vel_y = 0
             self.is_jumping = False
 
@@ -124,18 +124,18 @@ class CollisionChecker:
         collisions = pg.sprite.spritecollide(sprite, platforms, False)
         for obj in collisions:
             # Colisión en la parte superior del bloque
-            if sprite.vel_y > 0 and sprite.rect.bottom > obj.rect.top and sprite.rect.bottom - sprite.vel_y <= obj.rect.top:
+            if sprite.vel_y > 0 and sprite.rect.bottom <= obj.rect.top + sprite.vel_y:
                 sprite.rect.bottom = obj.rect.top
                 sprite.vel_y = 0
                 sprite.on_platform = True
                 sprite.jumps_left = 1
             # Colisión en la parte inferior del bloque
-            elif sprite.vel_y < 0 and sprite.rect.top < obj.rect.bottom and sprite.rect.top - sprite.vel_y >= obj.rect.bottom:
+            elif sprite.vel_y < 0 and sprite.rect.top >= obj.rect.bottom + sprite.vel_y:
                 sprite.rect.top = obj.rect.bottom
                 sprite.vel_y = 0
 
             # Colisión en el lado izquierdo del bloque
-            if sprite.vel_x > 0 and sprite.rect.right > obj.rect.left and sprite.rect.right - sprite.vel_x <= obj.rect.left:
+            if sprite.vel_x > 0 and sprite.rect.right <= obj.rect.left + sprite.vel_x:
                 sprite.rect.right = obj.rect.left
                 sprite.vel_x = 0
                 # Verifica si la tecla B está presionada y maneja la destrucción
@@ -148,7 +148,7 @@ class CollisionChecker:
                             obj.kill()
                             sprite.destruction_timer_start = 0
             # Colisión en el lado derecho del bloque
-            elif sprite.vel_x < 0 and sprite.rect.left < obj.rect.right and sprite.rect.left - sprite.vel_x >= obj.rect.right:
+            elif sprite.vel_x < 0 and sprite.rect.left >= obj.rect.right + sprite.vel_x:
                 sprite.rect.left = obj.rect.right
                 sprite.vel_x = 0
 
@@ -179,11 +179,11 @@ def main():
     platforms = pg.sprite.Group()
 
     plataforma = Plataforma(300, 700, 1000, 20, NEGRO)
-    tierra1 = Tierra(700, 675, 25)
-    tierra2 = Tierra(600, 625, 25)
-    tierra3 = Tierra(900, 650, 25)  # Nuevo bloque de tierra
-    piedra = Piedra(750, 675, 25)
-    jugador = Jugador(WIDTH // 2, HEIGHT // 2, 20, 40, CERÚLEO_O_AZUR)
+    tierra1 = Tierra(700, 650, 50)
+    tierra2 = Tierra(600, 600, 50)
+    tierra3 = Tierra(900, 650, 50)
+    piedra = Piedra(750, 650, 50)
+    jugador = Jugador(WIDTH // 2, HEIGHT // 2, 25, 50, CERÚLEO_O_AZUR)
 
     all_sprites.add(plataforma, tierra1, tierra2, tierra3, piedra, jugador)
     platforms.add(plataforma, tierra1, tierra2, tierra3, piedra)
