@@ -12,6 +12,7 @@ BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
 CERÚLEO_O_AZUR = (0, 191, 255)
 VERDE_ESTÁNDAR = (0, 128, 0)
+GRIS = (128, 128, 128)
 GRANATE = (128, 0, 0)
 VINO = (139, 0, 0)
 
@@ -50,14 +51,22 @@ class Plataforma(pg.sprite.Sprite):
     def draw(self, surface):
         pg.draw.rect(surface, self.color, self.rect)
 
-class Tierra(pg.sprite.Sprite):
-    def __init__(self, x, y, size):
+class Bloque(pg.sprite.Sprite):
+    def __init__(self, x, y, size, color):
         super().__init__()
         self.rect = pg.Rect(x, y, size, size)
-        self.color = VERDE_ESTÁNDAR
+        self.color = color
 
     def draw(self, surface):
         pg.draw.rect(surface, self.color, self.rect)
+
+class Tierra(Bloque):
+    def __init__(self, x, y, size):
+        super().__init__(x, y, size, VERDE_ESTÁNDAR)
+
+class Piedra(Bloque):
+    def __init__(self, x, y, size):
+        super().__init__(x, y, size, GRIS)
 
 class Jugador(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, color):
@@ -138,7 +147,8 @@ def main():
     pg.display.set_caption('ProjectXY')
 
     plataformas = [Plataforma(300, 700, 1000, 20, NEGRO)]
-    tierra_bajo_plataforma = Tierra(700, 675, 25)
+    tierra = Tierra(700, 675, 25)
+    piedra = Piedra(750, 675, 25)
     jugador = Jugador(WIDTH // 2, HEIGHT // 2, 20, 40, CERÚLEO_O_AZUR)
     cuadricula = Cuadricula(GRID_SIZE, GRANATE, VINO, WIDTH, HEIGHT)
     clock = pg.time.Clock()
@@ -153,10 +163,10 @@ def main():
         jugador.apply_gravity()
 
         jugador.move(jugador.vel_x, 0)
-        CollisionChecker.check_collision(jugador, plataformas + [tierra_bajo_plataforma])
+        CollisionChecker.check_collision(jugador, plataformas + [tierra, piedra])
 
         jugador.move(0, jugador.vel_y)
-        CollisionChecker.check_collision(jugador, plataformas + [tierra_bajo_plataforma])
+        CollisionChecker.check_collision(jugador, plataformas + [tierra, piedra])
 
         if jugador.rect.top > HEIGHT:
             jugador.reset_position(WIDTH // 2, HEIGHT // 2)
@@ -165,7 +175,8 @@ def main():
         cuadricula.draw(window)
         for plataforma in plataformas:
             plataforma.draw(window)
-        tierra_bajo_plataforma.draw(window)
+        tierra.draw(window)
+        piedra.draw(window)
         jugador.draw(window)
 
         pg.display.flip()
