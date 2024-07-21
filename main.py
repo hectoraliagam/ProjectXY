@@ -8,6 +8,9 @@ JUMP_STRENGTH = 15
 GRID_SIZE = 50
 FONT_SIZE = 20
 
+DESTRUCTION_TIME_TIERRA = 3000  # 3 segundos en milisegundos para destruir tierra
+DESTRUCTION_TIME_PIEDRA = 10000  # 10 segundos en milisegundos para destruir piedra
+
 BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
 CERÚLEO_O_AZUR = (0, 191, 255)
@@ -76,6 +79,8 @@ class Jugador(pg.sprite.Sprite):
         self.on_platform = False
         self.is_jumping = False
         self.jump_start_y = 0
+        self.destruction_timer_start = 0
+        self.current_block = None
 
     def move(self, dx, dy):
         self.rect.x += dx
@@ -123,9 +128,12 @@ class CollisionChecker:
             if sprite.vel_x > 0 and sprite.rect.right > obj.rect.left and sprite.rect.right - sprite.vel_x <= obj.rect.left:
                 sprite.rect.right = obj.rect.left
                 sprite.vel_x = 0
+                return obj  # Return the object collided with on the right
             elif sprite.vel_x < 0 and sprite.rect.left < obj.rect.right and sprite.rect.left - sprite.vel_x >= obj.rect.right:
                 sprite.rect.left = obj.rect.right
                 sprite.vel_x = 0
+                return None
+        return None
 
 def handle_input(jugador):
     keys = pg.key.get_pressed()
@@ -164,13 +172,28 @@ def main():
         jugador.apply_gravity()
 
         jugador.move(jugador.vel_x, 0)
-        CollisionChecker.check_collision(jugador, platforms)
+        collided_obj = CollisionChecker.check_collision(jugador, platforms)
 
         jugador.move(0, jugador.vel_y)
         CollisionChecker.check_collision(jugador, platforms)
 
         if jugador.rect.top > HEIGHT:
             jugador.reset_position(WIDTH // 2, HEIGHT // 2)
+
+        keys = pg.key.get_pressed()
+        if collided_obj and keys[pg.K_b]:
+            if jugador.destruction_timer_start == 0 or jugador.current_block != collided_obj:
+                jugador.destruction_timer_start = pg.time.get_ticks()
+                jugador.current_block = collided_obj
+            else:
+                destruction_time = DESTRUCTION_TIME_TIERRA if isinstance(collided_obj, Tierra) else DESTRUCTION_TIME_PIEDRA
+                if pg.time.get_ticks() - jugador.destruction_timer_start >= destruction_time:
+                    collided_obj.kill()
+                    jugador.destruction_timer_start = 0
+                    jugador.current_block = None
+        else:
+            jugador.destruction_timer_start = 0
+            jugador.current_block = None
 
         window.fill(BLANCO)
         cuadricula.draw(window)
