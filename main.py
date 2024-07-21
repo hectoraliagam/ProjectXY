@@ -2,24 +2,25 @@ import pygame as pg
 import sys
 
 SCREEN_RATIO = 16 / 9
-pg.init()
-info = pg.display.Info()
-SCREEN_WIDTH = info.current_w
-SCREEN_HEIGHT = info.current_h
-WIDTH = SCREEN_WIDTH
-HEIGHT = int(SCREEN_WIDTH / SCREEN_RATIO)
 SPEED = 5
 GRAVITY = 0.5
 JUMP_STRENGTH = 15
 GRID_SIZE = 50
 FONT_SIZE = 20
 
-Blanco = (255, 255, 255)
-Negro = (0, 0, 0)
-Rojo_Naranja = (255, 69, 0)
-Verde_Estandar = (0, 128, 0)
-Granate = (128, 0, 0)
-Vino = (139, 0, 0)
+BLANCO = (255, 255, 255)
+NEGRO = (0, 0, 0)
+CERÚLEO_O_AZUR = (0, 191, 255)
+VERDE_ESTÁNDAR = (0, 128, 0)
+GRANATE = (128, 0, 0)
+VINO = (139, 0, 0)
+
+def setup_screen():
+    pg.init()
+    info = pg.display.Info()
+    screen_width = info.current_w
+    screen_height = int(screen_width / SCREEN_RATIO)
+    return pg.display.set_mode((screen_width, screen_height), pg.FULLSCREEN), screen_width, screen_height
 
 class Cuadricula:
     def __init__(self, grid_size, line_color, text_color, width, height):
@@ -39,6 +40,24 @@ class Cuadricula:
             pg.draw.line(surface, self.line_color, (0, y), (self.width, y))
             label = self.font.render(f'{y}', True, self.text_color)
             surface.blit(label, (2, y + 2))
+
+class Plataforma(pg.sprite.Sprite):
+    def __init__(self, x, y, width, height, color):
+        super().__init__()
+        self.rect = pg.Rect(x, y, width, height)
+        self.color = color
+
+    def draw(self, surface):
+        pg.draw.rect(surface, self.color, self.rect)
+
+class Tierra(pg.sprite.Sprite):
+    def __init__(self, x, y, size):
+        super().__init__()
+        self.rect = pg.Rect(x, y, size, size)
+        self.color = VERDE_ESTÁNDAR
+
+    def draw(self, surface):
+        pg.draw.rect(surface, self.color, self.rect)
 
 class Jugador(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, color):
@@ -76,85 +95,52 @@ class Jugador(pg.sprite.Sprite):
             self.is_jumping = False
 
     def reset_position(self, x, y):
-        self.rect.x = x
-        self.rect.y = y
-        self.vel_x = 0
-        self.vel_y = 0
+        self.rect.topleft = (x, y)
+        self.vel_x = self.vel_y = 0
         self.on_platform = False
         self.jumps_left = 1
         self.is_jumping = False
-
-class Plataforma(pg.sprite.Sprite):
-    def __init__(self, x, y, width, height, color):
-        super().__init__()
-        self.rect = pg.Rect(x, y, width, height)
-        self.color = color
-
-    def draw(self, surface):
-        pg.draw.rect(surface, self.color, self.rect)
-
-class Tierra(pg.sprite.Sprite):
-    def __init__(self, x, y, size):
-        super().__init__()
-        self.rect = pg.Rect(x, y, size, size)
-        self.color = Verde_Estandar
-
-    def draw(self, surface):
-        pg.draw.rect(surface, self.color, self.rect)
 
 class CollisionChecker:
     @staticmethod
     def check_collision(rect, objects):
         rect.on_platform = False
+
         for obj in objects:
             if rect.rect.colliderect(obj.rect):
-                # Handling collision from above
                 if rect.vel_y > 0 and rect.rect.bottom <= obj.rect.top + abs(rect.vel_y):
                     rect.rect.bottom = obj.rect.top
                     rect.vel_y = 0
                     rect.on_platform = True
                     rect.jumps_left = 1
-                # Handling collision from below
                 elif rect.vel_y < 0 and rect.rect.top >= obj.rect.bottom:
                     rect.rect.top = obj.rect.bottom
                     rect.vel_y = 0
 
-                # Handling horizontal collisions
-                if rect.vel_x > 0 and rect.rect.right > obj.rect.left and rect.rect.left < obj.rect.left:
+                if rect.vel_x > 0 and rect.rect.right > obj.rect.left and rect.rect.right - rect.vel_x <= obj.rect.left:
                     rect.rect.right = obj.rect.left
                     rect.vel_x = 0
-                elif rect.vel_x < 0 and rect.rect.left < obj.rect.right and rect.rect.right > obj.rect.right:
+                elif rect.vel_x < 0 and rect.rect.left < obj.rect.right and rect.rect.left - rect.vel_x >= obj.rect.right:
                     rect.rect.left = obj.rect.right
                     rect.vel_x = 0
 
 def handle_input(jugador):
     keys = pg.key.get_pressed()
-    if keys[pg.K_LEFT]:
-        jugador.vel_x = -SPEED
-    elif keys[pg.K_RIGHT]:
-        jugador.vel_x = SPEED
-    else:
-        jugador.vel_x = 0
-
+    jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
     if keys[pg.K_SPACE]:
         jugador.jump()
-
     if keys[pg.K_ESCAPE]:
         pg.quit()
         sys.exit()
 
 def main():
-    pg.init()
-    window = pg.display.set_mode((WIDTH, HEIGHT), pg.FULLSCREEN)
+    window, WIDTH, HEIGHT = setup_screen()
     pg.display.set_caption('ProjectXY')
 
-    plataformas = [
-        Plataforma(300, 700, 1000, 20, Negro)
-    ]
-
+    plataformas = [Plataforma(300, 700, 1000, 20, NEGRO)]
     tierra_bajo_plataforma = Tierra(700, 675, 25)
-    jugador = Jugador(WIDTH // 2, HEIGHT // 2, 20, 40, Rojo_Naranja)
-    cuadricula = Cuadricula(GRID_SIZE, Granate, Vino, WIDTH, HEIGHT)
+    jugador = Jugador(WIDTH // 2, HEIGHT // 2, 20, 40, CERÚLEO_O_AZUR)
+    cuadricula = Cuadricula(GRID_SIZE, GRANATE, VINO, WIDTH, HEIGHT)
     clock = pg.time.Clock()
 
     while True:
@@ -164,7 +150,6 @@ def main():
                 sys.exit()
 
         handle_input(jugador)
-
         jugador.apply_gravity()
 
         jugador.move(jugador.vel_x, 0)
@@ -176,7 +161,7 @@ def main():
         if jugador.rect.top > HEIGHT:
             jugador.reset_position(WIDTH // 2, HEIGHT // 2)
 
-        window.fill(Blanco)
+        window.fill(BLANCO)
         cuadricula.draw(window)
         for plataforma in plataformas:
             plataforma.draw(window)

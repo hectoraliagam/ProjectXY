@@ -1,4 +1,3 @@
-# Define los colores en formato RGB.
 Rojo = (255, 0, 0)
 Rojo_Naranja = (255, 83, 0)
 Naranja = (255, 165, 0)
