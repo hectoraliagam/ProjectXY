@@ -1,7 +1,6 @@
 import pygame as pg
 import sys
 
-# Configuración de constantes
 SCREEN_RATIO = 16 / 9
 SPEED = 3
 GRAVITY = 0.5
@@ -24,24 +23,27 @@ def setup_screen():
     screen_height = int(screen_width / SCREEN_RATIO)
     return pg.display.set_mode((screen_width, screen_height), pg.FULLSCREEN), screen_width, screen_height
 
+def draw_grid(surface, grid_size, line_color, text_color, width, height, font_size):
+    font = pg.font.Font(None, font_size)
+    for x in range(0, width, grid_size):
+        pg.draw.line(surface, line_color, (x, 0), (x, height))
+        label = font.render(f'{x}', True, text_color)
+        surface.blit(label, (x + 2, 2))
+    for y in range(0, height, grid_size):
+        pg.draw.line(surface, line_color, (0, y), (width, y))
+        label = font.render(f'{y}', True, text_color)
+        surface.blit(label, (2, y + 2))
+
 class Cuadricula:
     def __init__(self, grid_size, line_color, text_color, width, height):
         self.grid_size = grid_size
         self.line_color = line_color
         self.text_color = text_color
-        self.font = pg.font.Font(None, FONT_SIZE)
         self.width = width
         self.height = height
 
     def draw(self, surface):
-        for x in range(0, self.width, self.grid_size):
-            pg.draw.line(surface, self.line_color, (x, 0), (x, self.height))
-            label = self.font.render(f'{x}', True, self.text_color)
-            surface.blit(label, (x + 2, 2))
-        for y in range(0, self.height, self.grid_size):
-            pg.draw.line(surface, self.line_color, (0, y), (self.width, y))
-            label = self.font.render(f'{y}', True, self.text_color)
-            surface.blit(label, (2, y + 2))
+        draw_grid(surface, self.grid_size, self.line_color, self.text_color, self.width, self.height, FONT_SIZE)
 
 class Plataforma(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, color):
@@ -119,46 +121,57 @@ class Jugador(pg.sprite.Sprite):
 
 class CollisionChecker:
     @staticmethod
-    def check_collision(sprite, platforms):
+    def check_horizontal_collision(sprite, platforms):
+        collisions = pg.sprite.spritecollide(sprite, platforms, False)
+        for obj in collisions:
+            if sprite.vel_x > 0:
+                if sprite.rect.right > obj.rect.left and sprite.rect.left < obj.rect.right:
+                    sprite.rect.right = obj.rect.left
+                    sprite.vel_x = 0
+                    CollisionChecker.handle_destruction(sprite, obj)
+            elif sprite.vel_x < 0:
+                if sprite.rect.left < obj.rect.right and sprite.rect.right > obj.rect.left:
+                    sprite.rect.left = obj.rect.right
+                    sprite.vel_x = 0
+                    CollisionChecker.handle_destruction(sprite, obj)
+
+    @staticmethod
+    def check_vertical_collision(sprite, platforms):
         sprite.on_platform = False
         collisions = pg.sprite.spritecollide(sprite, platforms, False)
         for obj in collisions:
-            # Colisión en la parte superior del bloque
-            if sprite.vel_y > 0 and sprite.rect.bottom <= obj.rect.top + sprite.vel_y:
-                sprite.rect.bottom = obj.rect.top
-                sprite.vel_y = 0
-                sprite.on_platform = True
-                sprite.jumps_left = 1
-            # Colisión en la parte inferior del bloque
-            elif sprite.vel_y < 0 and sprite.rect.top >= obj.rect.bottom + sprite.vel_y:
-                sprite.rect.top = obj.rect.bottom
-                sprite.vel_y = 0
+            if sprite.vel_y > 0:
+                if sprite.rect.bottom > obj.rect.top and sprite.rect.top < obj.rect.bottom:
+                    sprite.rect.bottom = obj.rect.top
+                    sprite.vel_y = 0
+                    sprite.on_platform = True
+                    sprite.jumps_left = 1
+            elif sprite.vel_y < 0:
+                if sprite.rect.top < obj.rect.bottom and sprite.rect.bottom > obj.rect.top:
+                    sprite.rect.top = obj.rect.bottom
+                    sprite.vel_y = 0
 
-            # Colisión en el lado izquierdo del bloque
-            if sprite.vel_x > 0 and sprite.rect.right <= obj.rect.left + sprite.vel_x:
-                sprite.rect.right = obj.rect.left
-                sprite.vel_x = 0
-                # Verifica si la tecla B está presionada y maneja la destrucción
-                if pg.key.get_pressed()[pg.K_b]:
-                    if sprite.destruction_timer_start == 0:
-                        sprite.destruction_timer_start = pg.time.get_ticks()
-                    else:
-                        destruction_time = obj.get_destruction_time()
-                        if pg.time.get_ticks() - sprite.destruction_timer_start >= destruction_time:
-                            obj.kill()
-                            sprite.destruction_timer_start = 0
-            # Colisión en el lado derecho del bloque
-            elif sprite.vel_x < 0 and sprite.rect.left >= obj.rect.right + sprite.vel_x:
-                sprite.rect.left = obj.rect.right
-                sprite.vel_x = 0
+    @staticmethod
+    def handle_destruction(sprite, obj):
+        if pg.key.get_pressed()[pg.K_b]:
+            if sprite.destruction_timer_start == 0:
+                sprite.destruction_timer_start = pg.time.get_ticks()
+            else:
+                destruction_time = obj.get_destruction_time()
+                if pg.time.get_ticks() - sprite.destruction_timer_start >= destruction_time:
+                    obj.kill()
+                    sprite.destruction_timer_start = 0
 
-            # Actualiza el bloque actual si la colisión se produjo
-            if sprite.vel_x > 0 and sprite.rect.right <= obj.rect.left:
-                sprite.current_block = obj
-            elif sprite.vel_x < 0 and sprite.rect.left >= obj.rect.right:
-                sprite.current_block = obj
+def handle_input(jugador):
+    keys = pg.key.get_pressed()
+    jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
 
-        return
+    if keys[pg.K_SPACE]:
+        jugador.jump()
+
+    if keys[pg.K_ESCAPE]:
+        pg.quit()
+        sys.exit()
 
 def handle_input(jugador):
     keys = pg.key.get_pressed()
@@ -201,10 +214,10 @@ def main():
         jugador.apply_gravity()
 
         jugador.move(jugador.vel_x, 0)
-        CollisionChecker.check_collision(jugador, platforms)
+        CollisionChecker.check_horizontal_collision(jugador, platforms)
 
         jugador.move(0, jugador.vel_y)
-        CollisionChecker.check_collision(jugador, platforms)
+        CollisionChecker.check_vertical_collision(jugador, platforms)
 
         if jugador.rect.top > HEIGHT:
             jugador.reset_position(WIDTH // 2, HEIGHT // 2)
