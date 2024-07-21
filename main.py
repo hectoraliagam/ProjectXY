@@ -8,9 +8,6 @@ JUMP_STRENGTH = 15
 GRID_SIZE = 50
 FONT_SIZE = 20
 
-DESTRUCTION_TIME_TIERRA = 3000  # 3 segundos en milisegundos para destruir tierra
-DESTRUCTION_TIME_PIEDRA = 10000  # 10 segundos en milisegundos para destruir piedra
-
 BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
 CERÚLEO_O_AZUR = (0, 191, 255)
@@ -59,13 +56,22 @@ class Bloque(pg.sprite.Sprite):
         self.image.fill(color)
         self.rect = self.image.get_rect(topleft=(x, y))
 
+    def get_destruction_time(self):
+        pass
+
 class Tierra(Bloque):
     def __init__(self, x, y, size):
         super().__init__(x, y, size, VERDE_ESTÁNDAR)
 
+    def get_destruction_time(self):
+        return 3000
+
 class Piedra(Bloque):
     def __init__(self, x, y, size):
         super().__init__(x, y, size, GRIS)
+
+    def get_destruction_time(self):
+        return 10000
 
 class Jugador(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, color):
@@ -110,7 +116,6 @@ class Jugador(pg.sprite.Sprite):
         self.is_jumping = False
 
 class CollisionChecker:
-    @staticmethod
     def check_collision(sprite, platforms):
         sprite.on_platform = False
         collisions = pg.sprite.spritecollide(sprite, platforms, False)
@@ -128,7 +133,7 @@ class CollisionChecker:
             if sprite.vel_x > 0 and sprite.rect.right > obj.rect.left and sprite.rect.right - sprite.vel_x <= obj.rect.left:
                 sprite.rect.right = obj.rect.left
                 sprite.vel_x = 0
-                return obj  # Return the object collided with on the right
+                return obj
             elif sprite.vel_x < 0 and sprite.rect.left < obj.rect.right and sprite.rect.left - sprite.vel_x >= obj.rect.right:
                 sprite.rect.left = obj.rect.right
                 sprite.vel_x = 0
@@ -143,6 +148,19 @@ def handle_input(jugador):
     if keys[pg.K_ESCAPE]:
         pg.quit()
         sys.exit()
+
+    if keys[pg.K_b] and jugador.current_block:
+        if jugador.destruction_timer_start == 0:
+            jugador.destruction_timer_start = pg.time.get_ticks()
+        else:
+            destruction_time = jugador.current_block.get_destruction_time()
+            if pg.time.get_ticks() - jugador.destruction_timer_start >= destruction_time:
+                jugador.current_block.kill()
+                jugador.destruction_timer_start = 0
+                jugador.current_block = None
+    else:
+        jugador.destruction_timer_start = 0
+        jugador.current_block = None
 
 def main():
     window, WIDTH, HEIGHT = setup_screen()
@@ -180,20 +198,8 @@ def main():
         if jugador.rect.top > HEIGHT:
             jugador.reset_position(WIDTH // 2, HEIGHT // 2)
 
-        keys = pg.key.get_pressed()
-        if collided_obj and keys[pg.K_b]:
-            if jugador.destruction_timer_start == 0 or jugador.current_block != collided_obj:
-                jugador.destruction_timer_start = pg.time.get_ticks()
-                jugador.current_block = collided_obj
-            else:
-                destruction_time = DESTRUCTION_TIME_TIERRA if isinstance(collided_obj, Tierra) else DESTRUCTION_TIME_PIEDRA
-                if pg.time.get_ticks() - jugador.destruction_timer_start >= destruction_time:
-                    collided_obj.kill()
-                    jugador.destruction_timer_start = 0
-                    jugador.current_block = None
-        else:
-            jugador.destruction_timer_start = 0
-            jugador.current_block = None
+        if collided_obj:
+            jugador.current_block = collided_obj
 
         window.fill(BLANCO)
         cuadricula.draw(window)
