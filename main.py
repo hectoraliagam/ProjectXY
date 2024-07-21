@@ -122,36 +122,45 @@ class CollisionChecker:
     def check_collision(sprite, platforms):
         sprite.on_platform = False
         collisions = pg.sprite.spritecollide(sprite, platforms, False)
-        
         for obj in collisions:
-            if sprite.vel_y > 0:  # Colisión con la parte superior del bloque
-                if sprite.rect.bottom > obj.rect.top and sprite.rect.bottom - sprite.vel_y <= obj.rect.top:
-                    sprite.rect.bottom = obj.rect.top
-                    sprite.vel_y = 0
-                    sprite.on_platform = True
-                    sprite.jumps_left = 1
-            elif sprite.vel_y < 0:  # Colisión con la parte inferior del bloque
-                if sprite.rect.top < obj.rect.bottom and sprite.rect.top - sprite.vel_y >= obj.rect.bottom:
-                    sprite.rect.top = obj.rect.bottom
-                    sprite.vel_y = 0
-
-            if sprite.vel_x > 0:  # Colisión con el lado izquierdo del bloque
-                if sprite.rect.right > obj.rect.left and sprite.rect.right - sprite.vel_x <= obj.rect.left:
-                    sprite.rect.right = obj.rect.left
-                    sprite.vel_x = 0
-            elif sprite.vel_x < 0:  # Colisión con el lado derecho del bloque
-                if sprite.rect.left < obj.rect.right and sprite.rect.left - sprite.vel_x >= obj.rect.right:
-                    sprite.rect.left = obj.rect.right
-                    sprite.vel_x = 0
-
-            # Si la colisión se produjo desde arriba, se puede caer
-            if sprite.vel_y > 0 and sprite.rect.bottom <= obj.rect.top and sprite.rect.top < obj.rect.bottom:
+            # Colisión en la parte superior del bloque
+            if sprite.vel_y > 0 and sprite.rect.bottom > obj.rect.top and sprite.rect.bottom - sprite.vel_y <= obj.rect.top:
                 sprite.rect.bottom = obj.rect.top
                 sprite.vel_y = 0
                 sprite.on_platform = True
                 sprite.jumps_left = 1
+            # Colisión en la parte inferior del bloque
+            elif sprite.vel_y < 0 and sprite.rect.top < obj.rect.bottom and sprite.rect.top - sprite.vel_y >= obj.rect.bottom:
+                sprite.rect.top = obj.rect.bottom
+                sprite.vel_y = 0
 
-def handle_input(jugador, platforms):
+            # Colisión en el lado izquierdo del bloque
+            if sprite.vel_x > 0 and sprite.rect.right > obj.rect.left and sprite.rect.right - sprite.vel_x <= obj.rect.left:
+                sprite.rect.right = obj.rect.left
+                sprite.vel_x = 0
+                # Verifica si la tecla B está presionada y maneja la destrucción
+                if pg.key.get_pressed()[pg.K_b]:
+                    if sprite.destruction_timer_start == 0:
+                        sprite.destruction_timer_start = pg.time.get_ticks()
+                    else:
+                        destruction_time = obj.get_destruction_time()
+                        if pg.time.get_ticks() - sprite.destruction_timer_start >= destruction_time:
+                            obj.kill()
+                            sprite.destruction_timer_start = 0
+            # Colisión en el lado derecho del bloque
+            elif sprite.vel_x < 0 and sprite.rect.left < obj.rect.right and sprite.rect.left - sprite.vel_x >= obj.rect.right:
+                sprite.rect.left = obj.rect.right
+                sprite.vel_x = 0
+
+            # Actualiza el bloque actual si la colisión se produjo
+            if sprite.vel_x > 0 and sprite.rect.right <= obj.rect.left:
+                sprite.current_block = obj
+            elif sprite.vel_x < 0 and sprite.rect.left >= obj.rect.right:
+                sprite.current_block = obj
+
+        return
+
+def handle_input(jugador):
     keys = pg.key.get_pressed()
     jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
 
@@ -161,19 +170,6 @@ def handle_input(jugador, platforms):
     if keys[pg.K_ESCAPE]:
         pg.quit()
         sys.exit()
-
-    if keys[pg.K_b] and jugador.current_block:
-        if jugador.destruction_timer_start == 0:
-            jugador.destruction_timer_start = pg.time.get_ticks()
-        else:
-            destruction_time = jugador.current_block.get_destruction_time()
-            if pg.time.get_ticks() - jugador.destruction_timer_start >= destruction_time:
-                jugador.current_block.kill()
-                jugador.destruction_timer_start = 0
-                jugador.current_block = None
-    else:
-        jugador.destruction_timer_start = 0
-        jugador.current_block = None
 
 def main():
     window, WIDTH, HEIGHT = setup_screen()
@@ -201,7 +197,7 @@ def main():
                 pg.quit()
                 sys.exit()
 
-        handle_input(jugador, platforms)
+        handle_input(jugador)
         jugador.apply_gravity()
 
         jugador.move(jugador.vel_x, 0)
