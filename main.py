@@ -1,6 +1,7 @@
 import pygame as pg
 import sys
 
+# Configuración de constantes
 SCREEN_RATIO = 16 / 9
 SPEED = 5
 GRAVITY = 0.5
@@ -55,23 +56,24 @@ class Bloque(pg.sprite.Sprite):
         self.image = pg.Surface((size, size))
         self.image.fill(color)
         self.rect = self.image.get_rect(topleft=(x, y))
+        self.destruction_timer_start = 0
+        self.destruction_time = 0
 
     def get_destruction_time(self):
-        pass
+        return self.destruction_time
+
+    def set_destruction_time(self, time):
+        self.destruction_time = time
 
 class Tierra(Bloque):
     def __init__(self, x, y, size):
         super().__init__(x, y, size, VERDE_ESTÁNDAR)
-
-    def get_destruction_time(self):
-        return 3000
+        self.set_destruction_time(3000)
 
 class Piedra(Bloque):
     def __init__(self, x, y, size):
         super().__init__(x, y, size, GRIS)
-
-    def get_destruction_time(self):
-        return 10000
+        self.set_destruction_time(10000)
 
 class Jugador(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, color):
@@ -116,35 +118,46 @@ class Jugador(pg.sprite.Sprite):
         self.is_jumping = False
 
 class CollisionChecker:
+    @staticmethod
     def check_collision(sprite, platforms):
         sprite.on_platform = False
         collisions = pg.sprite.spritecollide(sprite, platforms, False)
-
+        
         for obj in collisions:
-            if sprite.vel_y > 0 and sprite.rect.bottom <= obj.rect.top + abs(sprite.vel_y):
+            if sprite.vel_y > 0:  # Colisión con la parte superior del bloque
+                if sprite.rect.bottom > obj.rect.top and sprite.rect.bottom - sprite.vel_y <= obj.rect.top:
+                    sprite.rect.bottom = obj.rect.top
+                    sprite.vel_y = 0
+                    sprite.on_platform = True
+                    sprite.jumps_left = 1
+            elif sprite.vel_y < 0:  # Colisión con la parte inferior del bloque
+                if sprite.rect.top < obj.rect.bottom and sprite.rect.top - sprite.vel_y >= obj.rect.bottom:
+                    sprite.rect.top = obj.rect.bottom
+                    sprite.vel_y = 0
+
+            if sprite.vel_x > 0:  # Colisión con el lado izquierdo del bloque
+                if sprite.rect.right > obj.rect.left and sprite.rect.right - sprite.vel_x <= obj.rect.left:
+                    sprite.rect.right = obj.rect.left
+                    sprite.vel_x = 0
+            elif sprite.vel_x < 0:  # Colisión con el lado derecho del bloque
+                if sprite.rect.left < obj.rect.right and sprite.rect.left - sprite.vel_x >= obj.rect.right:
+                    sprite.rect.left = obj.rect.right
+                    sprite.vel_x = 0
+
+            # Si la colisión se produjo desde arriba, se puede caer
+            if sprite.vel_y > 0 and sprite.rect.bottom <= obj.rect.top and sprite.rect.top < obj.rect.bottom:
                 sprite.rect.bottom = obj.rect.top
                 sprite.vel_y = 0
                 sprite.on_platform = True
                 sprite.jumps_left = 1
-            elif sprite.vel_y < 0 and sprite.rect.top >= obj.rect.bottom:
-                sprite.rect.top = obj.rect.bottom
-                sprite.vel_y = 0
 
-            if sprite.vel_x > 0 and sprite.rect.right > obj.rect.left and sprite.rect.right - sprite.vel_x <= obj.rect.left:
-                sprite.rect.right = obj.rect.left
-                sprite.vel_x = 0
-                return obj
-            elif sprite.vel_x < 0 and sprite.rect.left < obj.rect.right and sprite.rect.left - sprite.vel_x >= obj.rect.right:
-                sprite.rect.left = obj.rect.right
-                sprite.vel_x = 0
-                return None
-        return None
-
-def handle_input(jugador):
+def handle_input(jugador, platforms):
     keys = pg.key.get_pressed()
     jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
+
     if keys[pg.K_SPACE]:
         jugador.jump()
+
     if keys[pg.K_ESCAPE]:
         pg.quit()
         sys.exit()
@@ -170,12 +183,14 @@ def main():
     platforms = pg.sprite.Group()
 
     plataforma = Plataforma(300, 700, 1000, 20, NEGRO)
-    tierra = Tierra(700, 675, 25)
+    tierra1 = Tierra(700, 675, 25)
+    tierra2 = Tierra(600, 625, 25)
+    tierra3 = Tierra(900, 650, 25)  # Nuevo bloque de tierra
     piedra = Piedra(750, 675, 25)
     jugador = Jugador(WIDTH // 2, HEIGHT // 2, 20, 40, CERÚLEO_O_AZUR)
 
-    all_sprites.add(plataforma, tierra, piedra, jugador)
-    platforms.add(plataforma, tierra, piedra)
+    all_sprites.add(plataforma, tierra1, tierra2, tierra3, piedra, jugador)
+    platforms.add(plataforma, tierra1, tierra2, tierra3, piedra)
 
     cuadricula = Cuadricula(GRID_SIZE, GRANATE, VINO, WIDTH, HEIGHT)
     clock = pg.time.Clock()
@@ -186,20 +201,17 @@ def main():
                 pg.quit()
                 sys.exit()
 
-        handle_input(jugador)
+        handle_input(jugador, platforms)
         jugador.apply_gravity()
 
         jugador.move(jugador.vel_x, 0)
-        collided_obj = CollisionChecker.check_collision(jugador, platforms)
+        CollisionChecker.check_collision(jugador, platforms)
 
         jugador.move(0, jugador.vel_y)
         CollisionChecker.check_collision(jugador, platforms)
 
         if jugador.rect.top > HEIGHT:
             jugador.reset_position(WIDTH // 2, HEIGHT // 2)
-
-        if collided_obj:
-            jugador.current_block = collided_obj
 
         window.fill(BLANCO)
         cuadricula.draw(window)
