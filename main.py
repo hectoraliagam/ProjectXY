@@ -23,17 +23,6 @@ def setup_screen():
     screen_height = int(screen_width / SCREEN_RATIO)
     return pg.display.set_mode((screen_width, screen_height), pg.FULLSCREEN), screen_width, screen_height
 
-def draw_grid(surface, grid_size, line_color, text_color, width, height, font_size):
-    font = pg.font.Font(None, font_size)
-    for x in range(0, width, grid_size):
-        pg.draw.line(surface, line_color, (x, 0), (x, height))
-        label = font.render(f'{x}', True, text_color)
-        surface.blit(label, (x + 2, 2))
-    for y in range(0, height, grid_size):
-        pg.draw.line(surface, line_color, (0, y), (width, y))
-        label = font.render(f'{y}', True, text_color)
-        surface.blit(label, (2, y + 2))
-
 class Cuadricula:
     def __init__(self, grid_size, line_color, text_color, width, height):
         self.grid_size = grid_size
@@ -43,7 +32,15 @@ class Cuadricula:
         self.height = height
 
     def draw(self, surface):
-        draw_grid(surface, self.grid_size, self.line_color, self.text_color, self.width, self.height, FONT_SIZE)
+        font = pg.font.Font(None, FONT_SIZE)
+        for x in range(0, self.width, self.grid_size):
+            pg.draw.line(surface, self.line_color, (x, 0), (x, self.height))
+            label = font.render(f'{x}', True, self.text_color)
+            surface.blit(label, (x + 2, 2))
+        for y in range(0, self.height, self.grid_size):
+            pg.draw.line(surface, self.line_color, (0, y), (self.width, y))
+            label = font.render(f'{y}', True, self.text_color)
+            surface.blit(label, (2, y + 2))
 
 class Plataforma(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, color):
@@ -89,7 +86,6 @@ class Jugador(pg.sprite.Sprite):
         self.on_platform = False
         self.is_jumping = False
         self.jump_start_y = 0
-        self.destruction_timer_start = 0
         self.current_block = None
 
     def move(self, dx, dy):
@@ -155,15 +151,14 @@ class CollisionChecker:
 
     @staticmethod
     def handle_destruction(sprite, obj):
-        if pg.key.get_pressed()[pg.K_b]:
-            if sprite.destruction_timer_start == 0:
-                sprite.destruction_timer_start = pg.time.get_ticks()
+        if pg.key.get_pressed()[pg.K_b] and hasattr(obj, 'destruction_timer_start'):
+            if obj.destruction_timer_start == 0:
+                obj.destruction_timer_start = pg.time.get_ticks()
             else:
-                if hasattr(obj, 'get_destruction_time'):
-                    destruction_time = obj.get_destruction_time()
-                    if pg.time.get_ticks() - sprite.destruction_timer_start >= destruction_time:
-                        obj.kill()
-                        sprite.destruction_timer_start = 0
+                destruction_time = obj.get_destruction_time()
+                if pg.time.get_ticks() - obj.destruction_timer_start >= destruction_time:
+                    obj.kill()
+                    obj.destruction_timer_start = 0
 
 def handle_input(jugador):
     keys = pg.key.get_pressed()
