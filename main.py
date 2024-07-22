@@ -2,7 +2,7 @@ import pygame as pg
 import sys
 
 SCREEN_RATIO = 16 / 9
-SPEED = 3
+SPEED = 4
 GRAVITY = 0.5
 JUMP_STRENGTH = 15
 GRID_SIZE = 50
@@ -146,10 +146,12 @@ class CollisionChecker:
                     sprite.vel_y = 0
                     sprite.on_platform = True
                     sprite.jumps_left = 1
+                    CollisionChecker.handle_destruction(sprite, obj)
             elif sprite.vel_y < 0:
                 if sprite.rect.top < obj.rect.bottom and sprite.rect.bottom > obj.rect.top:
                     sprite.rect.top = obj.rect.bottom
                     sprite.vel_y = 0
+                    CollisionChecker.handle_destruction(sprite, obj)
 
     @staticmethod
     def handle_destruction(sprite, obj):
@@ -157,21 +159,11 @@ class CollisionChecker:
             if sprite.destruction_timer_start == 0:
                 sprite.destruction_timer_start = pg.time.get_ticks()
             else:
-                destruction_time = obj.get_destruction_time()
-                if pg.time.get_ticks() - sprite.destruction_timer_start >= destruction_time:
-                    obj.kill()
-                    sprite.destruction_timer_start = 0
-
-def handle_input(jugador):
-    keys = pg.key.get_pressed()
-    jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
-
-    if keys[pg.K_SPACE]:
-        jugador.jump()
-
-    if keys[pg.K_ESCAPE]:
-        pg.quit()
-        sys.exit()
+                if hasattr(obj, 'get_destruction_time'):
+                    destruction_time = obj.get_destruction_time()
+                    if pg.time.get_ticks() - sprite.destruction_timer_start >= destruction_time:
+                        obj.kill()
+                        sprite.destruction_timer_start = 0
 
 def handle_input(jugador):
     keys = pg.key.get_pressed()
