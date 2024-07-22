@@ -49,6 +49,9 @@ class Plataforma(pg.sprite.Sprite):
         self.image.fill(color)
         self.rect = self.image.get_rect(topleft=(x, y))
 
+    def draw(self, surface):
+        surface.blit(self.image, self.rect.topleft)
+
 class Bloque(pg.sprite.Sprite):
     def __init__(self, x, y, size, color):
         super().__init__()
@@ -63,6 +66,17 @@ class Bloque(pg.sprite.Sprite):
 
     def set_destruction_time(self, time):
         self.destruction_time = time
+
+    def draw(self, surface):
+        surface.blit(self.image, self.rect.topleft)
+        if self.destruction_timer_start > 0:
+            font = pg.font.Font(None, FONT_SIZE)
+            elapsed_time = pg.time.get_ticks() - self.destruction_timer_start
+            if elapsed_time < self.destruction_time:
+                percentage = max(0, 100 - (elapsed_time / self.destruction_time) * 100)
+                text = font.render(f'{int(percentage)}%', True, BLANCO)
+                text_rect = text.get_rect(center=self.rect.center)
+                surface.blit(text, text_rect)
 
 class Tierra(Bloque):
     def __init__(self, x, y, size):
@@ -211,7 +225,12 @@ def main():
 
         window.fill(BLANCO)
         cuadricula.draw(window)
-        all_sprites.draw(window)
+
+        for sprite in all_sprites:
+            if isinstance(sprite, (Plataforma, Bloque)):
+                sprite.draw(window)
+            else:
+                window.blit(sprite.image, sprite.rect.topleft)
 
         pg.display.flip()
         clock.tick(60)
