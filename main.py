@@ -53,55 +53,45 @@ class Plataforma(pg.sprite.Sprite):
         surface.blit(self.image, self.rect.topleft)
 
 class Bloque(pg.sprite.Sprite):
-    def __init__(self, x, y, size, color):
+    def __init__(self, x, y, size, color, destruction_points):
         super().__init__()
         self.image = pg.Surface((size, size))
         self.image.fill(color)
         self.rect = self.image.get_rect(topleft=(x, y))
-        self.destruction_timer_start = 0
-        self.destruction_time = 0
-        self.life_percentage = 100
-        self.decrement_speed = 0.1
+        self.destruction_points = destruction_points
+        self.current_points = destruction_points
         self.is_damaging = False
-
-    def get_destruction_time(self):
-        return self.destruction_time
-
-    def set_destruction_time(self, time):
-        self.destruction_time = time
 
     def update_life(self):
         keys = pg.key.get_pressed()
-        if keys[pg.K_b] and (keys[pg.K_LEFT] or keys[pg.K_RIGHT] or keys[pg.K_UP] or keys[pg.K_DOWN]):
+        if keys[pg.K_b] and (keys[pg.K_LEFT] or keys[pg.K_RIGHT] or keys[pg.K_SPACE] or keys[pg.K_DOWN]):
             self.is_damaging = True
         else:
             self.is_damaging = False
 
         if self.is_damaging:
-            self.life_percentage -= self.decrement_speed
-            if self.life_percentage < 0:
-                self.life_percentage = 0
+            damage_amount = 1
+            self.current_points -= damage_amount
+            if self.current_points <= 0:
+                self.current_points = 0
+                self.kill()
 
     def draw(self, surface):
         surface.blit(self.image, self.rect.topleft)
         font = pg.font.Font(None, FONT_SIZE)
-        text = font.render(f'{int(self.life_percentage)}%', True, BLANCO)
-        text_rect = text.get_rect(center=self.rect.center)
-        surface.blit(text, text_rect)
-
-        if self.life_percentage <= 0:
-            self.kill()
-            self.destruction_timer_start = 0
+        if self.destruction_points > 0:
+            percentage = (self.current_points / self.destruction_points) * 100
+            text = font.render(f'{int(percentage)}%', True, BLANCO)
+            text_rect = text.get_rect(center=self.rect.center)
+            surface.blit(text, text_rect)
 
 class Tierra(Bloque):
     def __init__(self, x, y, size):
-        super().__init__(x, y, size, VERDE_ESTÁNDAR)
-        self.set_destruction_time(3000)
+        super().__init__(x, y, size, VERDE_ESTÁNDAR, destruction_points=300)
 
 class Piedra(Bloque):
     def __init__(self, x, y, size):
-        super().__init__(x, y, size, GRIS)
-        self.set_destruction_time(10000)
+        super().__init__(x, y, size, GRIS, destruction_points=1000)
 
 class Jugador(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, color):
