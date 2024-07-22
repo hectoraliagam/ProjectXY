@@ -60,6 +60,9 @@ class Bloque(pg.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=(x, y))
         self.destruction_timer_start = 0
         self.destruction_time = 0
+        self.life_percentage = 100
+        self.decrement_speed = 0.1
+        self.is_damaging = False
 
     def get_destruction_time(self):
         return self.destruction_time
@@ -67,16 +70,28 @@ class Bloque(pg.sprite.Sprite):
     def set_destruction_time(self, time):
         self.destruction_time = time
 
+    def update_life(self):
+        keys = pg.key.get_pressed()
+        if keys[pg.K_b] and (keys[pg.K_LEFT] or keys[pg.K_RIGHT] or keys[pg.K_UP] or keys[pg.K_DOWN]):
+            self.is_damaging = True
+        else:
+            self.is_damaging = False
+
+        if self.is_damaging:
+            self.life_percentage -= self.decrement_speed
+            if self.life_percentage < 0:
+                self.life_percentage = 0
+
     def draw(self, surface):
         surface.blit(self.image, self.rect.topleft)
-        if self.destruction_timer_start > 0:
-            font = pg.font.Font(None, FONT_SIZE)
-            elapsed_time = pg.time.get_ticks() - self.destruction_timer_start
-            if elapsed_time < self.destruction_time:
-                percentage = max(0, 100 - (elapsed_time / self.destruction_time) * 100)
-                text = font.render(f'{int(percentage)}%', True, BLANCO)
-                text_rect = text.get_rect(center=self.rect.center)
-                surface.blit(text, text_rect)
+        font = pg.font.Font(None, FONT_SIZE)
+        text = font.render(f'{int(self.life_percentage)}%', True, BLANCO)
+        text_rect = text.get_rect(center=self.rect.center)
+        surface.blit(text, text_rect)
+
+        if self.life_percentage <= 0:
+            self.kill()
+            self.destruction_timer_start = 0
 
 class Tierra(Bloque):
     def __init__(self, x, y, size):
@@ -129,6 +144,9 @@ class Jugador(pg.sprite.Sprite):
         self.jumps_left = 1
         self.is_jumping = False
 
+    def draw(self, surface):
+        surface.blit(self.image, self.rect.topleft)
+
 class CollisionChecker:
     @staticmethod
     def check_horizontal_collision(sprite, platforms):
@@ -165,14 +183,8 @@ class CollisionChecker:
 
     @staticmethod
     def handle_destruction(sprite, obj):
-        if pg.key.get_pressed()[pg.K_b] and hasattr(obj, 'destruction_timer_start'):
-            if obj.destruction_timer_start == 0:
-                obj.destruction_timer_start = pg.time.get_ticks()
-            else:
-                destruction_time = obj.get_destruction_time()
-                if pg.time.get_ticks() - obj.destruction_timer_start >= destruction_time:
-                    obj.kill()
-                    obj.destruction_timer_start = 0
+        if isinstance(obj, Bloque):
+            obj.update_life()
 
 def handle_input(jugador):
     keys = pg.key.get_pressed()
@@ -227,10 +239,7 @@ def main():
         cuadricula.draw(window)
 
         for sprite in all_sprites:
-            if isinstance(sprite, (Plataforma, Bloque)):
-                sprite.draw(window)
-            else:
-                window.blit(sprite.image, sprite.rect.topleft)
+            sprite.draw(window)
 
         pg.display.flip()
         clock.tick(60)
