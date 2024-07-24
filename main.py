@@ -2,9 +2,9 @@ import pygame as pg
 import sys
 
 SCREEN_RATIO = 16 / 9
-SPEED = 4
-GRAVITY = 0.5
-JUMP_STRENGTH = 15
+SPEED = 5
+GRAVITY = 1
+JUMP_STRENGTH = 25
 GRID_SIZE = 50
 FONT_SIZE = 20
 
@@ -13,6 +13,7 @@ NEGRO = (0, 0, 0)
 CERÚLEO_O_AZUR = (0, 191, 255)
 VERDE_ESTÁNDAR = (0, 128, 0)
 GRIS = (128, 128, 128)
+MARRON = (139, 69, 19)
 GRANATE = (128, 0, 0)
 VINO = (139, 0, 0)
 
@@ -52,8 +53,24 @@ class Plataforma(pg.sprite.Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect.topleft)
 
+class Text(pg.sprite.Sprite):
+    def __init__(self, x, y, width, height, bg_color, text_color, content):
+        super().__init__()
+        self.image = pg.Surface((width, height))
+        self.image.fill(bg_color)
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.text_color = text_color
+        self.content = content
+
+    def draw(self, surface):
+        surface.blit(self.image, self.rect.topleft)
+        font = pg.font.Font(None, FONT_SIZE)
+        text = font.render(self.content, True, self.text_color)
+        text_rect = text.get_rect(center=self.rect.center)
+        surface.blit(text, text_rect)
+
 class Bloque(pg.sprite.Sprite):
-    def __init__(self, x, y, size, color, destruction_points):
+    def __init__(self, x, y, size, color, destruction_points, arbol=None):
         super().__init__()
         self.image = pg.Surface((size, size))
         self.image.fill(color)
@@ -61,6 +78,7 @@ class Bloque(pg.sprite.Sprite):
         self.destruction_points = destruction_points
         self.current_points = destruction_points
         self.is_damaging = False
+        self.arbol = arbol
 
     def update_life(self):
         keys = pg.key.get_pressed()
@@ -74,6 +92,8 @@ class Bloque(pg.sprite.Sprite):
             self.current_points -= damage_amount
             if self.current_points <= 0:
                 self.current_points = 0
+                if self.arbol:
+                    self.arbol.destroy()
                 self.kill()
 
     def draw(self, surface):
@@ -87,11 +107,27 @@ class Bloque(pg.sprite.Sprite):
 
 class Tierra(Bloque):
     def __init__(self, x, y, size):
-        super().__init__(x, y, size, VERDE_ESTÁNDAR, destruction_points=300)
+        super().__init__(x, y, size, VERDE_ESTÁNDAR, 300)
 
 class Piedra(Bloque):
     def __init__(self, x, y, size):
-        super().__init__(x, y, size, GRIS, destruction_points=1000)
+        super().__init__(x, y, size, GRIS, 1000)
+
+class Madera(Bloque):
+    def __init__(self, x, y, size, arbol=None):
+        super().__init__(x, y, size, MARRON, 500, arbol)
+
+class Arbol:
+    def __init__(self, x, y, size):
+        self.bloques = [
+            Madera(x, y, size, self),
+            Madera(x, y - size, size, self),
+            Madera(x, y - 2 * size, size, self)
+        ]
+
+    def destroy(self):
+        for bloque in self.bloques:
+            bloque.kill()
 
 class Jugador(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, color):
@@ -198,11 +234,20 @@ def main():
     tierra1 = Tierra(700, 650, 50)
     tierra2 = Tierra(600, 600, 50)
     tierra3 = Tierra(900, 650, 50)
-    piedra = Piedra(750, 650, 50)
+    tierra4 = Tierra(500, 650, 50)
+    tierra5 = Tierra(450, 600, 50)
+    tierra6 = Tierra(350, 650, 50)
+    piedra1 = Piedra(750, 650, 50)
+    piedra2 = Piedra(800, 650, 50)
+    arbol1 = Arbol(400, 650, 50)
+    cuadro_texto = Text(100, 100, 1000, 20, NEGRO, CERÚLEO_O_AZUR, 'Texto inicial')
+
     jugador = Jugador(WIDTH // 2, HEIGHT // 2, 25, 50, CERÚLEO_O_AZUR)
 
-    all_sprites.add(plataforma, tierra1, tierra2, tierra3, piedra, jugador)
-    platforms.add(plataforma, tierra1, tierra2, tierra3, piedra)
+    plataformas = [plataforma, tierra1, tierra2, tierra3, tierra4, tierra5, tierra6, piedra1, piedra2]
+    arboles = arbol1.bloques
+    all_sprites.add(*plataformas, jugador, cuadro_texto, *arboles)
+    platforms.add(*plataformas, *arboles)
 
     cuadricula = Cuadricula(GRID_SIZE, GRANATE, VINO, WIDTH, HEIGHT)
     clock = pg.time.Clock()
