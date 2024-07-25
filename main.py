@@ -79,8 +79,14 @@ class Bloque(pg.sprite.Sprite):
         self.current_points = destruction_points
         self.is_damaging = False
         self.arbol = arbol
+        self.destruction_speed = 1
 
-    def update_life(self):
+    def update_life(self, destruction_direction):
+        if destruction_direction == 'vertical':
+            self.destruction_speed = 2
+        else:
+            self.destruction_speed = 1
+
         keys = pg.key.get_pressed()
         if keys[pg.K_b] and (keys[pg.K_LEFT] or keys[pg.K_RIGHT] or keys[pg.K_SPACE] or keys[pg.K_DOWN]):
             self.is_damaging = True
@@ -88,8 +94,7 @@ class Bloque(pg.sprite.Sprite):
             self.is_damaging = False
 
         if self.is_damaging:
-            damage_amount = 1
-            self.current_points -= damage_amount
+            self.current_points -= self.destruction_speed
             if self.current_points <= 0:
                 self.current_points = 0
                 if self.arbol:
@@ -182,12 +187,12 @@ class CollisionChecker:
                 if sprite.rect.right > obj.rect.left and sprite.rect.left < obj.rect.right:
                     sprite.rect.right = obj.rect.left
                     sprite.vel_x = 0
-                    CollisionChecker.handle_destruction(sprite, obj)
+                    CollisionChecker.handle_destruction(sprite, obj, 'horizontal')
             elif sprite.vel_x < 0:
                 if sprite.rect.left < obj.rect.right and sprite.rect.right > obj.rect.left:
                     sprite.rect.left = obj.rect.right
                     sprite.vel_x = 0
-                    CollisionChecker.handle_destruction(sprite, obj)
+                    CollisionChecker.handle_destruction(sprite, obj, 'horizontal')
 
     @staticmethod
     def check_vertical_collision(sprite, platforms):
@@ -200,17 +205,17 @@ class CollisionChecker:
                     sprite.vel_y = 0
                     sprite.on_platform = True
                     sprite.jumps_left = 1
-                    CollisionChecker.handle_destruction(sprite, obj)
+                    CollisionChecker.handle_destruction(sprite, obj, 'vertical')
             elif sprite.vel_y < 0:
                 if sprite.rect.top < obj.rect.bottom and sprite.rect.bottom > obj.rect.top:
                     sprite.rect.top = obj.rect.bottom
                     sprite.vel_y = 0
-                    CollisionChecker.handle_destruction(sprite, obj)
+                    CollisionChecker.handle_destruction(sprite, obj, 'vertical')
 
     @staticmethod
-    def handle_destruction(sprite, obj):
+    def handle_destruction(sprite, obj, destruction_direction):
         if isinstance(obj, Bloque):
-            obj.update_life()
+            obj.update_life(destruction_direction)
 
 def handle_input(jugador):
     keys = pg.key.get_pressed()
