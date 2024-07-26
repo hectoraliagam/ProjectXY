@@ -30,6 +30,7 @@ class Cuadricula:
         self.grid_size = grid_size
         self.line_color = line_color
         self.text_color = text_color
+        self.coord_color = GRIS
         self.width = width
         self.height = height
 
@@ -41,6 +42,7 @@ class Cuadricula:
 
     def draw(self, surface):
         font = pg.font.Font(None, FONT_SIZE)
+        coord_font = pg.font.Font(None, FONT_SIZE - 5)
         max_rows = self.height // self.grid_size
         max_cols = self.width // self.grid_size
 
@@ -49,11 +51,26 @@ class Cuadricula:
         for y in range(0, self.height, self.grid_size):
             pg.draw.line(surface, self.line_color, (0, y), (self.width, y))
 
+        for col in range(max_cols):
+            coord_x = col * self.grid_size
+            coord_text = f'{coord_x}'
+            coord_label = coord_font.render(coord_text, True, self.text_color)
+            coord_rect = coord_label.get_rect(center=(col * self.grid_size + self.grid_size // 2, FONT_SIZE // 2))
+            surface.blit(coord_label, coord_rect)
+
+        for row in range(max_rows):
+            coord_y = row * self.grid_size
+            coord_text = f'{coord_y}'
+            coord_label = coord_font.render(coord_text, True, self.text_color) 
+            coord_rect = coord_label.get_rect(center=(FONT_SIZE // 2, row * self.grid_size + self.grid_size // 2))
+            surface.blit(coord_label, coord_rect)
+
         for row in range(max_rows):
             for col in range(max_cols):
                 cell_name = self.get_cell_name(col, row)
-                label = font.render(cell_name, True, self.text_color)
-                surface.blit(label, (col * self.grid_size + 2, row * self.grid_size + 2))
+                label = font.render(cell_name, True, self.coord_color) 
+                label_rect = label.get_rect(topleft=(col * self.grid_size + 2, row * self.grid_size + 2))
+                surface.blit(label, label_rect)
 
 class Plataforma(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, color):
@@ -292,7 +309,7 @@ def main():
     all_sprites = pg.sprite.Group()
     platforms = pg.sprite.Group()
 
-    plataforma = Plataforma(300, 700, 1000, 20, NEGRO)
+    plataforma = Plataforma(100, 700, 1150, 20, NEGRO)
     tierra1 = Tierra(700, 650, 50)
     tierra2 = Tierra(600, 600, 50)
     tierra3 = Tierra(900, 650, 50)
@@ -302,14 +319,13 @@ def main():
     piedra1 = Piedra(750, 650, 50)
     piedra2 = Piedra(800, 650, 50)
     arbol1 = Arbol(400, 650, 50)
-    cuadro_texto = Text(100, 100, 1000, 20, NEGRO, CERÚLEO_O_AZUR, 'Texto inicial')
+    cuadro_texto = Text(100, 100, 1150, 20, NEGRO, CERÚLEO_O_AZUR, 'ProjectXY')
 
     jugador = Jugador(WIDTH // 2, HEIGHT // 2, 25, 50, CERÚLEO_O_AZUR)
 
-    plataformas = [plataforma, tierra1, tierra2, tierra3, tierra4, tierra5, tierra6, piedra1, piedra2]
-    arboles = arbol1.bloques
-    all_sprites.add(*plataformas, jugador, cuadro_texto, *arboles)
-    platforms.add(*plataformas, *arboles)
+    plataformas = [plataforma, tierra1, tierra2, tierra3, tierra4, tierra5, tierra6, piedra1, piedra2, *arbol1.bloques]
+    all_sprites.add(*plataformas, jugador, cuadro_texto)
+    platforms.add(*plataformas)
 
     cuadricula = Cuadricula(GRID_SIZE, GRANATE, VINO, WIDTH, HEIGHT)
     clock = pg.time.Clock()
