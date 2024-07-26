@@ -94,18 +94,12 @@ class Bloque(pg.sprite.Sprite):
         self.destruction_speed = 1
 
     def update_life(self, destruction_direction):
-        if destruction_direction == 'vertical':
-            self.destruction_speed = 2
-        else:
-            self.destruction_speed = 1
-
-        keys = pg.key.get_pressed()
-        if keys[pg.K_b] and (keys[pg.K_LEFT] or keys[pg.K_RIGHT] or keys[pg.K_SPACE] or keys[pg.K_DOWN]):
-            self.is_damaging = True
-        else:
-            self.is_damaging = False
-
         if self.is_damaging:
+            if destruction_direction == 'vertical':
+                self.destruction_speed = 2
+            else:
+                self.destruction_speed = 1
+
             self.current_points -= self.destruction_speed
             if self.current_points <= 0:
                 self.current_points = 0
@@ -159,10 +153,13 @@ class Jugador(pg.sprite.Sprite):
         self.is_jumping = False
         self.jump_start_y = 0
         self.current_block = None
+        self.is_damaging = False
+        self.destruction_direction = None
 
     def move(self, dx, dy):
-        self.rect.x += dx
-        self.rect.y += dy
+        if not self.is_damaging:
+            self.rect.x += dx
+            self.rect.y += dy
 
     def jump(self):
         if self.on_platform or self.jumps_left > 0:
@@ -187,8 +184,49 @@ class Jugador(pg.sprite.Sprite):
         self.jumps_left = 1
         self.is_jumping = False
 
+    def destroy_adjacent_blocks(self, platforms):
+        keys = pg.key.get_pressed()
+        self.is_damaging = keys[pg.K_b]
+
+        if self.is_damaging:
+            player_cell_x, player_cell_y = get_cell_coordinates(self.rect, GRID_SIZE)
+            
+            cell_x = player_cell_x * GRID_SIZE
+            cell_y = player_cell_y * GRID_SIZE
+            cell_rect = pg.Rect(cell_x, cell_y, GRID_SIZE, GRID_SIZE)
+
+            if cell_rect.contains(self.rect):
+                directions = {
+                    pg.K_LEFT: (player_cell_x - 1, player_cell_y),
+                    pg.K_RIGHT: (player_cell_x + 1, player_cell_y),
+                    pg.K_UP: (player_cell_x, player_cell_y - 1),
+                    pg.K_DOWN: (player_cell_x, player_cell_y + 1)
+                }
+
+                for key, (cell_x, cell_y) in directions.items():
+                    if keys[key]:
+                        adjacent_x = cell_x * GRID_SIZE
+                        adjacent_y = cell_y * GRID_SIZE
+                        block_rect = pg.Rect(adjacent_x, adjacent_y, GRID_SIZE, GRID_SIZE)
+
+                        blocks_to_destroy = [s for s in platforms if isinstance(s, Bloque) and block_rect.colliderect(s.rect)]
+
+                        for block in blocks_to_destroy:
+                            block.is_damaging = True
+                            block.update_life(self.destruction_direction)
+        else:
+            self.destruction_direction = None
+            for block in platforms:
+                if isinstance(block, Bloque):
+                    block.is_damaging = False
+
     def draw(self, surface):
         surface.blit(self.image, self.rect.topleft)
+
+def get_cell_coordinates(rect, grid_size):
+    cell_x = rect.x // grid_size
+    cell_y = rect.y // grid_size
+    return cell_x, cell_y
 
 class CollisionChecker:
     @staticmethod
@@ -229,9 +267,13 @@ class CollisionChecker:
         if isinstance(obj, Bloque):
             obj.update_life(destruction_direction)
 
-def handle_input(jugador):
+def handle_input(jugador, platforms):
     keys = pg.key.get_pressed()
-    jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
+    
+    if not keys[pg.K_b]:
+        jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
+    else:
+        jugador.vel_x = 0
 
     if keys[pg.K_SPACE]:
         jugador.jump()
@@ -239,6 +281,8 @@ def handle_input(jugador):
     if keys[pg.K_ESCAPE]:
         pg.quit()
         sys.exit()
+
+    jugador.destroy_adjacent_blocks(platforms)
 
 def main():
     window, WIDTH, HEIGHT = setup_screen()
@@ -275,7 +319,7 @@ def main():
                 pg.quit()
                 sys.exit()
 
-        handle_input(jugador)
+        handle_input(jugador, platforms)
         jugador.apply_gravity()
 
         jugador.move(jugador.vel_x, 0)
