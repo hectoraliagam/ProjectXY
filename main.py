@@ -186,9 +186,9 @@ class Jugador(pg.sprite.Sprite):
 
     def destroy_adjacent_blocks(self, platforms):
         keys = pg.key.get_pressed()
-        self.is_damaging = keys[pg.K_b]
-
-        if self.is_damaging:
+        if self.on_platform and keys[pg.K_b]:
+            self.is_damaging = True
+            self.vel_x = 0 
             player_cell_x, player_cell_y = get_cell_coordinates(self.rect, GRID_SIZE)
             
             cell_x = player_cell_x * GRID_SIZE
@@ -215,6 +215,7 @@ class Jugador(pg.sprite.Sprite):
                             block.is_damaging = True
                             block.update_life(self.destruction_direction)
         else:
+            self.is_damaging = False
             self.destruction_direction = None
             for block in platforms:
                 if isinstance(block, Bloque):
@@ -269,13 +270,13 @@ class CollisionChecker:
 
 def handle_input(jugador, platforms):
     keys = pg.key.get_pressed()
-    
-    if not keys[pg.K_b]:
-        jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
-    else:
-        jugador.vel_x = 0
 
-    if keys[pg.K_SPACE]:
+    if keys[pg.K_b]:
+        jugador.vel_x = 0
+    else:
+        jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
+
+    if not keys[pg.K_b] and keys[pg.K_SPACE]:
         jugador.jump()
 
     if keys[pg.K_ESCAPE]:
