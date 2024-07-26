@@ -1,5 +1,6 @@
 import pygame as pg
 import sys
+import string
 
 SCREEN_RATIO = 16 / 9
 SPEED = 5
@@ -32,16 +33,27 @@ class Cuadricula:
         self.width = width
         self.height = height
 
+    def get_cell_name(self, col, row):
+        letters = string.ascii_uppercase
+        row_name = letters[row % len(letters)]
+        col_name = str(col + 1)
+        return row_name + col_name
+
     def draw(self, surface):
         font = pg.font.Font(None, FONT_SIZE)
+        max_rows = self.height // self.grid_size
+        max_cols = self.width // self.grid_size
+
         for x in range(0, self.width, self.grid_size):
             pg.draw.line(surface, self.line_color, (x, 0), (x, self.height))
-            label = font.render(f'{x}', True, self.text_color)
-            surface.blit(label, (x + 2, 2))
         for y in range(0, self.height, self.grid_size):
             pg.draw.line(surface, self.line_color, (0, y), (self.width, y))
-            label = font.render(f'{y}', True, self.text_color)
-            surface.blit(label, (2, y + 2))
+
+        for row in range(max_rows):
+            for col in range(max_cols):
+                cell_name = self.get_cell_name(col, row)
+                label = font.render(cell_name, True, self.text_color)
+                surface.blit(label, (col * self.grid_size + 2, row * self.grid_size + 2))
 
 class Plataforma(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, color):
