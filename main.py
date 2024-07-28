@@ -92,10 +92,10 @@ class Text(pg.sprite.Sprite):
         self.content = content
 
     def draw(self, surface):
-        surface.blit(self.image, self.rect.topleft)
         font = pg.font.Font(None, FONT_SIZE)
         text = font.render(self.content, True, self.text_color)
         text_rect = text.get_rect(center=self.rect.center)
+        surface.blit(self.image, self.rect.topleft)
         surface.blit(text, text_rect)
 
 class TextoDestruccion(Text):
@@ -107,7 +107,8 @@ class TextoDestruccion(Text):
     def actualizar(self, bloque):
         if bloque and bloque.is_damaging:
             percentage = (bloque.current_points / bloque.destruction_points) * 100
-            new_content = f'{int(percentage)}%'
+            block_type = bloque.__class__.__name__
+            new_content = f'{block_type}: {int(percentage)}%'
         else:
             new_content = ''
         
@@ -115,7 +116,6 @@ class TextoDestruccion(Text):
             self.content = new_content
 
     def draw(self, surface):
-        self.image.fill(self.bg_color)
         font = pg.font.Font(None, FONT_SIZE)
         text = font.render(self.content, True, self.text_color)
         text_rect = text.get_rect(center=self.rect.center)
@@ -336,7 +336,7 @@ def main():
     piedra2 = Piedra(800, 650, 50)
     madera1 = Madera(400, 650, 50)
     cuadro_texto = Text(100, 100, 1150, 20, NEGRO, CERÚLEO_O_AZUR, 'ProjectXY')
-    texto_destruccion = TextoDestruccion(100, 50, 200, 40, NEGRO, BLANCO)
+    texto_destruccion = TextoDestruccion(100, 50, 200, 40, BLANCO, CERÚLEO_O_AZUR)
     jugador = Jugador(WIDTH // 2, HEIGHT // 2, 25, 50, CERÚLEO_O_AZUR, texto_destruccion)
 
     plataformas = [plataforma, tierra1, tierra2, tierra3, tierra4, tierra5, tierra6, piedra1, piedra2, madera1]
