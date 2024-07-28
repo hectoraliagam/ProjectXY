@@ -56,21 +56,21 @@ class Cuadricula:
             coord_x = col * self.grid_size
             coord_text = f'{coord_x}'
             coord_label = coord_font.render(coord_text, True, self.text_color)
-            coord_rect = coord_label.get_rect(center=(col * self.grid_size + self.grid_size // 2, FONT_SIZE // 2))
+            coord_rect = coord_label.get_rect(topleft=(coord_x + 2, 2))
             surface.blit(coord_label, coord_rect)
 
         for row in range(max_rows):
             coord_y = row * self.grid_size
             coord_text = f'{coord_y}'
-            coord_label = coord_font.render(coord_text, True, self.text_color) 
-            coord_rect = coord_label.get_rect(center=(FONT_SIZE // 2, row * self.grid_size + self.grid_size // 2))
+            coord_label = coord_font.render(coord_text, True, self.text_color)
+            coord_rect = coord_label.get_rect(topleft=(2, coord_y + 2))
             surface.blit(coord_label, coord_rect)
 
         for row in range(max_rows):
             for col in range(max_cols):
                 cell_name = self.get_cell_name(col, row)
-                label = font.render(cell_name, True, self.coord_color) 
-                label_rect = label.get_rect(topleft=(col * self.grid_size + 2, row * self.grid_size + 2))
+                label = font.render(cell_name, True, self.coord_color)
+                label_rect = label.get_rect(center=(col * self.grid_size + self.grid_size // 2, row * self.grid_size + self.grid_size // 2))
                 surface.blit(label, label_rect)
 
 class Plataforma(pg.sprite.Sprite):
