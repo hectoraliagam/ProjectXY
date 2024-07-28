@@ -99,7 +99,7 @@ class Text(pg.sprite.Sprite):
         surface.blit(text, text_rect)
 
 class Bloque(pg.sprite.Sprite):
-    def __init__(self, x, y, size, color, destruction_points, arbol=None):
+    def __init__(self, x, y, size, color, destruction_points):
         super().__init__()
         self.image = pg.Surface((size, size))
         self.image.fill(color)
@@ -107,7 +107,6 @@ class Bloque(pg.sprite.Sprite):
         self.destruction_points = destruction_points
         self.current_points = destruction_points
         self.is_damaging = False
-        self.arbol = arbol
         self.destruction_speed = 1
 
     def update_life(self, destruction_direction):
@@ -120,8 +119,6 @@ class Bloque(pg.sprite.Sprite):
             self.current_points -= self.destruction_speed
             if self.current_points <= 0:
                 self.current_points = 0
-                if self.arbol:
-                    self.arbol.destroy()
                 self.kill()
 
     def draw(self, surface):
@@ -142,20 +139,8 @@ class Piedra(Bloque):
         super().__init__(x, y, size, GRIS, 1000)
 
 class Madera(Bloque):
-    def __init__(self, x, y, size, arbol=None):
-        super().__init__(x, y, size, MARRON, 500, arbol)
-
-class Arbol:
     def __init__(self, x, y, size):
-        self.bloques = [
-            Madera(x, y, size, self),
-            Madera(x, y - size, size, self),
-            Madera(x, y - 2 * size, size, self)
-        ]
-
-    def destroy(self):
-        for bloque in self.bloques:
-            bloque.kill()
+        super().__init__(x, y, size, MARRON, 500)
 
 class Jugador(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, color):
@@ -318,12 +303,12 @@ def main():
     tierra6 = Tierra(350, 650, 50)
     piedra1 = Piedra(750, 650, 50)
     piedra2 = Piedra(800, 650, 50)
-    arbol1 = Arbol(400, 650, 50)
+    madera1 = Madera(400, 650, 50)
     cuadro_texto = Text(100, 100, 1150, 20, NEGRO, CERÚLEO_O_AZUR, 'ProjectXY')
 
     jugador = Jugador(WIDTH // 2, HEIGHT // 2, 25, 50, CERÚLEO_O_AZUR)
 
-    plataformas = [plataforma, tierra1, tierra2, tierra3, tierra4, tierra5, tierra6, piedra1, piedra2, *arbol1.bloques]
+    plataformas = [plataforma, tierra1, tierra2, tierra3, tierra4, tierra5, tierra6, piedra1, piedra2, madera1]
     all_sprites.add(*plataformas, jugador, cuadro_texto)
     platforms.add(*plataformas)
 
