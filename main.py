@@ -160,15 +160,15 @@ class Bloque(pg.sprite.Sprite):
 
 class Tierra(Bloque):
     def __init__(self, x, y, size):
-        super().__init__(x, y, size, VERDE_ESTÁNDAR, 300)
+        super().__init__(x, y, size, VERDE_ESTÁNDAR, 150)
 
 class Piedra(Bloque):
     def __init__(self, x, y, size):
-        super().__init__(x, y, size, GRIS, 1000)
+        super().__init__(x, y, size, GRIS, 500)
 
 class Madera(Bloque):
     def __init__(self, x, y, size):
-        super().__init__(x, y, size, MARRON, 500)
+        super().__init__(x, y, size, MARRON, 250)
 
 class Jugador(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, color, texto_destruccion):
@@ -227,40 +227,31 @@ class Jugador(pg.sprite.Sprite):
             cell_rect = pg.Rect(cell_x, cell_y, GRID_SIZE, GRID_SIZE)
 
             if cell_rect.contains(self.rect):
+                adjacent_x, adjacent_y = cell_x, cell_y
+                destruction_direction = None
+                
+                if keys[pg.K_UP]:
+                    adjacent_y -= GRID_SIZE
+                    destruction_direction = 'vertical'
+                if keys[pg.K_DOWN]:
+                    adjacent_y += GRID_SIZE
+                    destruction_direction = 'vertical'
                 if keys[pg.K_LEFT]:
-                    adjacent_x = (player_cell_x - 1) * GRID_SIZE
-                    adjacent_y = player_cell_y * GRID_SIZE
-                    self.destruction_direction = 'horizontal'
-                elif keys[pg.K_RIGHT]:
-                    adjacent_x = (player_cell_x + 1) * GRID_SIZE
-                    adjacent_y = player_cell_y * GRID_SIZE
-                    self.destruction_direction = 'horizontal'
-                elif keys[pg.K_UP]:
-                    adjacent_x = player_cell_x * GRID_SIZE
-                    adjacent_y = (player_cell_y - 1) * GRID_SIZE
-                    self.destruction_direction = 'vertical'
-                elif keys[pg.K_DOWN]:
-                    adjacent_x = player_cell_x * GRID_SIZE
-                    adjacent_y = (player_cell_y + 1) * GRID_SIZE
-                    self.destruction_direction = 'vertical'
-                else:
-                    return
+                    adjacent_x -= GRID_SIZE
+                    destruction_direction = 'horizontal'
+                if keys[pg.K_RIGHT]:
+                    adjacent_x += GRID_SIZE
+                    destruction_direction = 'horizontal'
 
-                block_rect = pg.Rect(adjacent_x, adjacent_y, GRID_SIZE, GRID_SIZE)
-                blocks_to_destroy = [s for s in platforms if isinstance(s, Bloque) and block_rect.colliderect(s.rect)]
+                if destruction_direction:
+                    block_rect = pg.Rect(adjacent_x, adjacent_y, GRID_SIZE, GRID_SIZE)
+                    blocks_to_destroy = [s for s in platforms if isinstance(s, Bloque) and block_rect.colliderect(s.rect)]
 
-                if blocks_to_destroy:
-                    block = blocks_to_destroy[0]
-                    block.is_damaging = True
-                    block.update_life(self.destruction_direction)
-                    self.texto_destruccion.actualizar(block)
-            else:
-                self.is_damaging = False
-                self.destruction_direction = None
-                for block in platforms:
-                    if isinstance(block, Bloque):
-                        block.is_damaging = False
-                self.texto_destruccion.actualizar(None)
+                    if blocks_to_destroy:
+                        block = blocks_to_destroy[0]
+                        block.is_damaging = True
+                        block.update_life(destruction_direction)
+                        self.texto_destruccion.actualizar(block)
         else:
             self.is_damaging = False
             self.destruction_direction = None
@@ -347,14 +338,15 @@ def main():
     tierra4 = Tierra(500, 650, 50)
     tierra5 = Tierra(450, 600, 50)
     tierra6 = Tierra(350, 650, 50)
+    tierra7 = Tierra(450, 500, 50)
     piedra1 = Piedra(750, 650, 50)
     piedra2 = Piedra(800, 650, 50)
     madera1 = Madera(400, 650, 50)
     cuadro_texto = Text(100, 100, 1150, 20, NEGRO, CERÚLEO_O_AZUR, 'ProjectXY')
     texto_destruccion = TextoDestruccion(100, 50, 100, 50, BLANCO, CERÚLEO_O_AZUR)
-    jugador = Jugador(WIDTH // 2, HEIGHT // 2, 25, 50, CERÚLEO_O_AZUR, texto_destruccion)
+    jugador = Jugador(WIDTH // 2, HEIGHT // 2, 25, 40, CERÚLEO_O_AZUR, texto_destruccion)
 
-    plataformas = [plataforma, tierra1, tierra2, tierra3, tierra4, tierra5, tierra6, piedra1, piedra2, madera1]
+    plataformas = [plataforma, tierra1, tierra2, tierra3, tierra4, tierra5, tierra6, tierra7, piedra1, piedra2, madera1]
     all_sprites.add(*plataformas, jugador, cuadro_texto, texto_destruccion)
     platforms.add(*plataformas)
 
