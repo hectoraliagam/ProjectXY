@@ -192,30 +192,38 @@ class Jugador(pg.sprite.Sprite):
             self.is_damaging = True
             self.vel_x = 0 
             player_cell_x, player_cell_y = get_cell_coordinates(self.rect, GRID_SIZE)
-            
+
             cell_x = player_cell_x * GRID_SIZE
             cell_y = player_cell_y * GRID_SIZE
             cell_rect = pg.Rect(cell_x, cell_y, GRID_SIZE, GRID_SIZE)
 
             if cell_rect.contains(self.rect):
-                directions = {
-                    pg.K_LEFT: (player_cell_x - 1, player_cell_y),
-                    pg.K_RIGHT: (player_cell_x + 1, player_cell_y),
-                    pg.K_UP: (player_cell_x, player_cell_y - 1),
-                    pg.K_DOWN: (player_cell_x, player_cell_y + 1)
-                }
+                if keys[pg.K_LEFT]:
+                    adjacent_x = (player_cell_x - 1) * GRID_SIZE
+                    adjacent_y = player_cell_y * GRID_SIZE
+                    self.destruction_direction = 'horizontal'
+                elif keys[pg.K_RIGHT]:
+                    adjacent_x = (player_cell_x + 1) * GRID_SIZE
+                    adjacent_y = player_cell_y * GRID_SIZE
+                    self.destruction_direction = 'horizontal'
+                elif keys[pg.K_UP]:
+                    adjacent_x = player_cell_x * GRID_SIZE
+                    adjacent_y = (player_cell_y - 1) * GRID_SIZE
+                    self.destruction_direction = 'vertical'
+                elif keys[pg.K_DOWN]:
+                    adjacent_x = player_cell_x * GRID_SIZE
+                    adjacent_y = (player_cell_y + 1) * GRID_SIZE
+                    self.destruction_direction = 'vertical'
+                else:
+                    return
 
-                for key, (cell_x, cell_y) in directions.items():
-                    if keys[key]:
-                        adjacent_x = cell_x * GRID_SIZE
-                        adjacent_y = cell_y * GRID_SIZE
-                        block_rect = pg.Rect(adjacent_x, adjacent_y, GRID_SIZE, GRID_SIZE)
+                block_rect = pg.Rect(adjacent_x, adjacent_y, GRID_SIZE, GRID_SIZE)
+                blocks_to_destroy = [s for s in platforms if isinstance(s, Bloque) and block_rect.colliderect(s.rect)]
 
-                        blocks_to_destroy = [s for s in platforms if isinstance(s, Bloque) and block_rect.colliderect(s.rect)]
-
-                        for block in blocks_to_destroy:
-                            block.is_damaging = True
-                            block.update_life(self.destruction_direction)
+                if blocks_to_destroy:
+                    block = blocks_to_destroy[0]
+                    block.is_damaging = True
+                    block.update_life(self.destruction_direction)
         else:
             self.is_damaging = False
             self.destruction_direction = None
