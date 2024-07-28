@@ -1,6 +1,7 @@
 import pygame as pg
 import sys
 import string
+import time
 
 SCREEN_RATIO = 16 / 9
 SPEED = 5
@@ -103,24 +104,31 @@ class TextoDestruccion(Text):
         super().__init__(x, y, width, height, bg_color, text_color, '')
         self.bg_color = bg_color
         self.text_color = text_color
+        self.last_update_time = time.time()
+        self.update_interval = 2.5
 
     def actualizar(self, bloque):
+        current_time = time.time()
         if bloque and bloque.is_damaging:
             percentage = (bloque.current_points / bloque.destruction_points) * 100
-            block_type = bloque.__class__.__name__
-            new_content = f'{block_type}: {int(percentage)}%'
+            new_content = f'{bloque.__class__.__name__}: {int(percentage)}%'
+            self.last_update_time = current_time
         else:
-            new_content = ''
+            if current_time - self.last_update_time > self.update_interval:
+                new_content = ''
+            else:
+                new_content = self.content
         
         if self.content != new_content:
             self.content = new_content
 
     def draw(self, surface):
+        self.image.fill(self.bg_color)
         font = pg.font.Font(None, FONT_SIZE)
         text = font.render(self.content, True, self.text_color)
         text_rect = text.get_rect(center=self.rect.center)
-        surface.blit(self.image, self.rect.topleft)
-        surface.blit(text, text_rect)
+        surface.blit(self.image, self.rect.topleft) 
+        surface.blit(text, text_rect) 
 
 class Bloque(pg.sprite.Sprite):
     def __init__(self, x, y, size, color, destruction_points):
@@ -246,6 +254,13 @@ class Jugador(pg.sprite.Sprite):
                     block.is_damaging = True
                     block.update_life(self.destruction_direction)
                     self.texto_destruccion.actualizar(block)
+            else:
+                self.is_damaging = False
+                self.destruction_direction = None
+                for block in platforms:
+                    if isinstance(block, Bloque):
+                        block.is_damaging = False
+                self.texto_destruccion.actualizar(None)
         else:
             self.is_damaging = False
             self.destruction_direction = None
@@ -336,7 +351,7 @@ def main():
     piedra2 = Piedra(800, 650, 50)
     madera1 = Madera(400, 650, 50)
     cuadro_texto = Text(100, 100, 1150, 20, NEGRO, CERÚLEO_O_AZUR, 'ProjectXY')
-    texto_destruccion = TextoDestruccion(100, 50, 200, 40, BLANCO, CERÚLEO_O_AZUR)
+    texto_destruccion = TextoDestruccion(100, 50, 100, 50, BLANCO, CERÚLEO_O_AZUR)
     jugador = Jugador(WIDTH // 2, HEIGHT // 2, 25, 50, CERÚLEO_O_AZUR, texto_destruccion)
 
     plataformas = [plataforma, tierra1, tierra2, tierra3, tierra4, tierra5, tierra6, piedra1, piedra2, madera1]
