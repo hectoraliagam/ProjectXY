@@ -98,6 +98,30 @@ class Text(pg.sprite.Sprite):
         text_rect = text.get_rect(center=self.rect.center)
         surface.blit(text, text_rect)
 
+class TextoDestruccion(Text):
+    def __init__(self, x, y, width, height, bg_color, text_color):
+        super().__init__(x, y, width, height, bg_color, text_color, '')
+        self.bg_color = bg_color
+        self.text_color = text_color
+
+    def actualizar(self, bloque):
+        if bloque and bloque.is_damaging:
+            percentage = (bloque.current_points / bloque.destruction_points) * 100
+            new_content = f'{int(percentage)}%'
+        else:
+            new_content = ''
+        
+        if self.content != new_content:
+            self.content = new_content
+
+    def draw(self, surface):
+        self.image.fill(self.bg_color)
+        font = pg.font.Font(None, FONT_SIZE)
+        text = font.render(self.content, True, self.text_color)
+        text_rect = text.get_rect(center=self.rect.center)
+        surface.blit(self.image, self.rect.topleft)
+        surface.blit(text, text_rect)
+
 class Bloque(pg.sprite.Sprite):
     def __init__(self, x, y, size, color, destruction_points):
         super().__init__()
@@ -143,7 +167,7 @@ class Madera(Bloque):
         super().__init__(x, y, size, MARRON, 500)
 
 class Jugador(pg.sprite.Sprite):
-    def __init__(self, x, y, width, height, color):
+    def __init__(self, x, y, width, height, color, texto_destruccion):
         super().__init__()
         self.image = pg.Surface((width, height))
         self.image.fill(color)
@@ -157,6 +181,7 @@ class Jugador(pg.sprite.Sprite):
         self.current_block = None
         self.is_damaging = False
         self.destruction_direction = None
+        self.texto_destruccion = texto_destruccion
 
     def move(self, dx, dy):
         if not self.is_damaging:
@@ -190,7 +215,7 @@ class Jugador(pg.sprite.Sprite):
         keys = pg.key.get_pressed()
         if self.on_platform and keys[pg.K_b]:
             self.is_damaging = True
-            self.vel_x = 0 
+            self.vel_x = 0
             player_cell_x, player_cell_y = get_cell_coordinates(self.rect, GRID_SIZE)
 
             cell_x = player_cell_x * GRID_SIZE
@@ -224,12 +249,14 @@ class Jugador(pg.sprite.Sprite):
                     block = blocks_to_destroy[0]
                     block.is_damaging = True
                     block.update_life(self.destruction_direction)
+                    self.texto_destruccion.actualizar(block)
         else:
             self.is_damaging = False
             self.destruction_direction = None
             for block in platforms:
                 if isinstance(block, Bloque):
                     block.is_damaging = False
+            self.texto_destruccion.actualizar(None)
 
     def draw(self, surface):
         surface.blit(self.image, self.rect.topleft)
@@ -313,11 +340,11 @@ def main():
     piedra2 = Piedra(800, 650, 50)
     madera1 = Madera(400, 650, 50)
     cuadro_texto = Text(100, 100, 1150, 20, NEGRO, CERÚLEO_O_AZUR, 'ProjectXY')
-
-    jugador = Jugador(WIDTH // 2, HEIGHT // 2, 25, 50, CERÚLEO_O_AZUR)
+    texto_destruccion = TextoDestruccion(100, 50, 200, 40, NEGRO, BLANCO)
+    jugador = Jugador(WIDTH // 2, HEIGHT // 2, 25, 50, CERÚLEO_O_AZUR, texto_destruccion)
 
     plataformas = [plataforma, tierra1, tierra2, tierra3, tierra4, tierra5, tierra6, piedra1, piedra2, madera1]
-    all_sprites.add(*plataformas, jugador, cuadro_texto)
+    all_sprites.add(*plataformas, jugador, cuadro_texto, texto_destruccion)
     platforms.add(*plataformas)
 
     cuadricula = Cuadricula(GRID_SIZE, GRANATE, VINO, WIDTH, HEIGHT)
