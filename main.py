@@ -135,11 +135,7 @@ class Bloque(pg.sprite.Sprite):
 
     def update_life(self, destruction_direction):
         if self.is_damaging:
-            if destruction_direction == 'vertical':
-                self.destruction_speed = 2
-            else:
-                self.destruction_speed = 1
-
+            self.destruction_speed = 1
             self.current_points -= self.destruction_speed
             if self.current_points <= 0:
                 self.current_points = 0
