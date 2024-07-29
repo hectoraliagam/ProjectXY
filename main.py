@@ -199,21 +199,24 @@ class Jugador(pg.sprite.Sprite):
             self.rect.y += dy
 
     def auto_jump(self, platforms, direction):
-        if direction == 'right':
-            check_rect = pg.Rect(self.rect.right, self.rect.top, 1, self.rect.height)
-        elif direction == 'left':
-            check_rect = pg.Rect(self.rect.left - 1, self.rect.top, 1, self.rect.height)
+        if self.on_platform:
+            if direction == 'right':
+                check_rect = pg.Rect(self.rect.right, self.rect.top, 1, self.rect.height)
+            elif direction == 'left':
+                check_rect = pg.Rect(self.rect.left - 1, self.rect.top, 1, self.rect.height)
+            else:
+                return
 
-        for block in platforms:
-            if isinstance(block, Bloque) and check_rect.colliderect(block.rect):
-                if direction == 'right':
-                    distance_to_block = block.rect.left - self.rect.right
-                elif direction == 'left':
-                    distance_to_block = self.rect.left - block.rect.right
-
-                if distance_to_block <= 1:
-                    self.jump()
-                    break
+            for block in platforms:
+                if isinstance(block, Bloque) and check_rect.colliderect(block.rect):
+                    if direction == 'right':
+                        if self.rect.right <= block.rect.left:
+                            self.jump()
+                            break
+                    elif direction == 'left':
+                        if self.rect.left >= block.rect.right:
+                            self.jump()
+                            break
 
     def jump(self):
         if self.on_platform or self.jumps_left > 0:
@@ -341,7 +344,7 @@ def handle_input(jugador, platforms):
         else:
             jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
 
-    if not keys[pg.K_b] and keys[pg.K_SPACE]:
+    if not keys[pg.K_b] and keys[pg.K_SPACE] and jugador.on_platform:
         jugador.jump()
 
     if keys[pg.K_ESCAPE]:
@@ -386,6 +389,13 @@ def main():
                 sys.exit()
 
         handle_input(jugador, platforms)
+
+        if jugador.vel_x != 0:
+            if jugador.vel_x > 0:
+                jugador.auto_jump(platforms, 'right')
+            else:
+                jugador.auto_jump(platforms, 'left')
+
         jugador.apply_gravity()
 
         jugador.move(jugador.vel_x, 0, platforms)
