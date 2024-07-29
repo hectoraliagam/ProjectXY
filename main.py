@@ -4,7 +4,8 @@ import string
 import time
 
 SCREEN_RATIO = 16 / 9
-SPEED = 5
+SPEED = 3
+RUN_SPEED = 6
 GRAVITY = 1
 JUMP_STRENGTH = 25
 GRID_SIZE = 50
@@ -309,11 +310,14 @@ class CollisionChecker:
 
 def handle_input(jugador, platforms):
     keys = pg.key.get_pressed()
-
+    
     if keys[pg.K_b]:
         jugador.vel_x = 0
     else:
-        jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
+        if keys[pg.K_LSHIFT] or keys[pg.K_RSHIFT]:
+            jugador.vel_x = RUN_SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
+        else:
+            jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
 
     if not keys[pg.K_b] and keys[pg.K_SPACE]:
         jugador.jump()
