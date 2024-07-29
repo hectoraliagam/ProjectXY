@@ -187,19 +187,21 @@ class Jugador(pg.sprite.Sprite):
         self.is_damaging = False
         self.destruction_direction = None
         self.texto_destruccion = texto_destruccion
+        self.is_running = False
 
     def move(self, dx, dy, platforms):
-        if dx > 0: 
-            self.auto_jump(platforms, 'right')
-        elif dx < 0: 
-            self.auto_jump(platforms, 'left')
+        if not self.is_running:
+            if dx > 0: 
+                self.auto_jump(platforms, 'right')
+            elif dx < 0: 
+                self.auto_jump(platforms, 'left')
 
         if not self.is_damaging:
             self.rect.x += dx
             self.rect.y += dy
 
     def auto_jump(self, platforms, direction):
-        if self.on_platform:
+        if not self.is_running and self.on_platform:
             if direction == 'right':
                 check_rect = pg.Rect(self.rect.right, self.rect.top, 1, self.rect.height)
             elif direction == 'left':
@@ -335,13 +337,15 @@ class CollisionChecker:
 
 def handle_input(jugador, platforms):
     keys = pg.key.get_pressed()
-    
+
     if keys[pg.K_b]:
         jugador.vel_x = 0
     else:
         if keys[pg.K_LSHIFT] or keys[pg.K_RSHIFT]:
+            jugador.is_running = True
             jugador.vel_x = RUN_SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
         else:
+            jugador.is_running = False
             jugador.vel_x = SPEED * (keys[pg.K_RIGHT] - keys[pg.K_LEFT])
 
     if not keys[pg.K_b] and keys[pg.K_SPACE] and jugador.on_platform:
