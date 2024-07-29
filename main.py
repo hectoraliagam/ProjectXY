@@ -188,10 +188,32 @@ class Jugador(pg.sprite.Sprite):
         self.destruction_direction = None
         self.texto_destruccion = texto_destruccion
 
-    def move(self, dx, dy):
+    def move(self, dx, dy, platforms):
+        if dx > 0: 
+            self.auto_jump(platforms, 'right')
+        elif dx < 0: 
+            self.auto_jump(platforms, 'left')
+
         if not self.is_damaging:
             self.rect.x += dx
             self.rect.y += dy
+
+    def auto_jump(self, platforms, direction):
+        if direction == 'right':
+            check_rect = pg.Rect(self.rect.right, self.rect.top, 1, self.rect.height)
+        elif direction == 'left':
+            check_rect = pg.Rect(self.rect.left - 1, self.rect.top, 1, self.rect.height)
+
+        for block in platforms:
+            if isinstance(block, Bloque) and check_rect.colliderect(block.rect):
+                if direction == 'right':
+                    distance_to_block = block.rect.left - self.rect.right
+                elif direction == 'left':
+                    distance_to_block = self.rect.left - block.rect.right
+
+                if distance_to_block <= 1:
+                    self.jump()
+                    break
 
     def jump(self):
         if self.on_platform or self.jumps_left > 0:
@@ -366,10 +388,10 @@ def main():
         handle_input(jugador, platforms)
         jugador.apply_gravity()
 
-        jugador.move(jugador.vel_x, 0)
+        jugador.move(jugador.vel_x, 0, platforms)
         CollisionChecker.check_horizontal_collision(jugador, platforms)
 
-        jugador.move(0, jugador.vel_y)
+        jugador.move(0, jugador.vel_y, platforms)
         CollisionChecker.check_vertical_collision(jugador, platforms)
 
         if jugador.rect.top > HEIGHT:
